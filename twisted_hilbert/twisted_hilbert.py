@@ -231,10 +231,6 @@ class TwistedHodgeDiamond(Element):
         """
         return "twisted Hodge diamond"
 
-    @property
-    def name(self):
-        return self.__repr__()
-
     def __str__(self):
         return str(self.pprint())
 
