@@ -232,6 +232,24 @@ class TwistedHodgeDiamond(Element):
         return "twisted Hodge diamond"
 
     def __str__(self):
+        r"""Pretty print a twisted Hodge diamond
+
+        This gets called when you specifically print the object.
+
+        EXAMPLES:
+
+        The twisted Hodge diamond for the projective plane and anticanonical bundle::
+
+            sage: from twisted_hilbert import *
+            sage: H = TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])
+            sage: print(H)
+                          0
+                      0        0
+                  1       0        0
+                      8        0
+                          10
+
+        """
         return str(self.pprint())
 
     def __getitem__(self, key):
