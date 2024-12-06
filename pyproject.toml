@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "twisted-hodge-hilbert"
+version = "1.0"
+dependencies = [
+  "twisted-ci @ git+https://github.com/pbelmans/twisted-hodge-ci.git",
+]

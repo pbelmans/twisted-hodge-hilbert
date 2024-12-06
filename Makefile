@@ -1,6 +1,6 @@
 install:
 	sage -pip install --upgrade -v -e .
-	rm -rf twisted_hilbert.egg-info
+	rm -rf twisted_hodge_hilbert.egg-info
 
 test:
 	sage -t twisted_hilbert
