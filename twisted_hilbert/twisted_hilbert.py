@@ -149,7 +149,7 @@ class TwistedHodgeDiamond(Element):
 
     def pprint(self):
         T = []
-        d = self.__M.nrows()
+        d = self.__M.nrows() - 1
 
         for i in reversed(range(2 * d + 1)):
             row = [""] * abs(d - i)
