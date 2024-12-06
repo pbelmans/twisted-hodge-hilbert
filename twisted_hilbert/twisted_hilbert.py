@@ -220,10 +220,10 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
 
 
 class TwistedHilbertSchemeDiamond:
-    __S = None
+    __diamond = None
 
-    def __init__(self, S: TwistedSurfaceDiamonds):
-        self.__S = S
+    def __init__(self, S: TwistedSurfaceDiamonds, n):
+        self.__diamond = twisted_hodge_diamond([S[k] for k in range(n + 1)], n)
 
-    def __getitem__(self, n):
-        return TwistedHodgeDiamond(twisted_hodge_diamond(self.__S, n))
+    def pprint(self):
+        return self.__diamond
