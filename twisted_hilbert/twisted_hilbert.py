@@ -128,8 +128,6 @@ class TwistedHodgeDiamond(Element):
 
     """
 
-    __M = None
-
     def __init__(self, parent, M):
         """
         INPUT:
@@ -307,9 +305,7 @@ class TwistedHodgeDiamondRing(Singleton, Parent):
 
 
 class TwistedSurfaceDiamonds:
-    r"""
-    Encodes twisted Hodge diamonds of surface and powers of a line bundle
-    """
+    r"""Encodes twisted Hodge diamonds of surface and powers of a line bundle"""
 
     __L = None
 
@@ -347,7 +343,6 @@ class TwistedSurfaceDiamonds:
 
     def __getitem__(self, k):
         r"""Get the ``k``-twisted Hodge diamond for the line bundle ``L``"""
-        # TODO return TwistedHodgeDiamond?
         return self.__L[k]
 
 
