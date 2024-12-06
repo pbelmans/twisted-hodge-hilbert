@@ -1,5 +1,6 @@
 from twisted_hilbert import twisted_hilbert
 from twisted_hilbert.twisted_hilbert import (
+    BiellipticSurface,
     CompleteIntersectionSurface,
     TwistedHilbertSchemeDiamond,
     TwistedHodgeDiamond,
@@ -9,6 +10,7 @@ from twisted_hilbert.twisted_hilbert import (
 )
 
 __all__ = [
+    "BiellipticSurface",
     "CompleteIntersectionSurface",
     "TwistedHilbertSchemeDiamond",
     "TwistedHodgeDiamond",

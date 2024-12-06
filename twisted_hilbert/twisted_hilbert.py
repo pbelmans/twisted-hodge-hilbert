@@ -373,6 +373,36 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
         return H
 
 
+class BiellipticSurface(TwistedSurfaceDiamonds):
+    r"""
+    TwistedSurfaceDiamonds for a bielliptic surface and the line bundle O(1)
+
+    Here O(1) refers to the fraction of the canonical bundle.
+    """
+
+    def __init__(self, order):
+        assert order in [2, 3, 4, 6]
+
+        self.__order = order
+
+    def __getitem__(self, k):
+        if self.__order == 2:
+            diamonds = [
+                matrix([[1, 1, 0], [1, 2, 1], [0, 1, 1]]),
+                matrix([[0, 1, 1], [1, 2, 1], [1, 1, 0]]),
+            ]
+            return TwistedHodgeDiamond.from_matrix(diamonds[k % 2])
+        if self.__order == 3:
+            diamonds = [
+                matrix([[1, 1, 0], [1, 2, 1], [0, 1, 1]]),
+                matrix([[0, 0, 0], [1, 1, 0], [1, 1, 0]]),
+                matrix([[0, 1, 1], [0, 1, 1], [0, 0, 0]]),
+            ]
+            return TwistedHodgeDiamond.from_matrix(diamonds[k % 3])
+        if self.__order in [4, 6]:
+            raise NotImplementedError()
+
+
 def TwistedHilbertSchemeDiamond(S: TwistedSurfaceDiamonds, n):
     r"""
     Construct twisted Hodge diamond Hilbert schemes of $n$ points on $S$
