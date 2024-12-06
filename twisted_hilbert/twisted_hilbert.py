@@ -204,17 +204,19 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
     """
 
     __d = None
+    __i = 1
 
-    def __init__(self, d):
+    def __init__(self, d, i=1):
         try:
             len(d)
         except TypeError:
             d = [d]
 
         self.__d = d
+        self.__i = i
 
     def __getitem__(self, k):
-        return twisted_ci.TwistedHodgeDiamond((len(self.__d) + 2, self.__d), k)
+        return twisted_ci.TwistedHodgeDiamond((len(self.__d) + 2, self.__d), k * self.__i)
 
 
 class TwistedHilbertSchemeDiamond:
