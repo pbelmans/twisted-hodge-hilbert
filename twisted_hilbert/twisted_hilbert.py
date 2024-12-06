@@ -341,7 +341,7 @@ class TwistedSurfaceDiamonds:
 
         """
         pair = TwistedSurfaceDiamonds()
-        pair.__L = list(map(matrix, L))
+        pair.__L = list(map(TwistedHodgeDiamond.from_matrix, L))
 
         return pair
 
