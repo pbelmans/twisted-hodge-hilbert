@@ -12,6 +12,10 @@ jobs:
       image: sagemath/sagemath:latest
       options: --user root
     steps:
+      - name: Install Git
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install git -y
       - name: Checkout Twisted Hodge numbers calculator
         uses: actions/checkout@v3
       - name: Install the Twisted Hodge numbers calculator
