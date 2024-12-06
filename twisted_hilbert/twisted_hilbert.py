@@ -110,6 +110,22 @@ class TwistedHodgeDiamond(Element):
 
     EXAMPLES:
 
+    The twisted Hodge diamond for the projective plane and anticanonical bundle::
+
+        sage: from twisted_hilbert import *
+        sage: H = TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])
+        sage: H
+        twisted Hodge diamond
+        sage: H.pprint()
+                      0
+                  0        0
+              1       0        0
+                  8        0
+                      10
+
+    Notice how (twisted) Hodge diamond are printed in a funny way, with `h^{0,0}` at
+    the bottom.
+
     """
 
     __M = None
@@ -148,6 +164,40 @@ class TwistedHodgeDiamond(Element):
             T[i].extend([""] * (2 * d - len(T[i]) + 1))
 
         return table(T, align="center")
+
+    def _repr_(self):
+        r"""Output diagnostic information
+
+        This is a one-line string giving some basic information about the twisted Hodge
+        diamond. You'll see this when you just evaluate something which returns
+        a twisted Hodge diamond. To see something more useful, you'll likely want to use
+
+        * :meth:`TwistedHodgeDiamond.__str__` via `print`
+        * :meth:`TwistedHodgeDiamond.pprint`
+        * :meth:`TwistedHodgeDiamond.polynomial`
+
+        It is also possible to override this output by using the built-in
+        functionality for parents and renaming.
+
+        EXAMPLES:
+
+        The default behavior::
+
+            sage: from twisted_hilbert import *
+            sage: TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])
+            twisted Hodge diamond
+
+        Special constructors give additional information::
+
+            sage: CompleteIntersectionSurface(3, 2)[2]
+            twisted Hodge diamond for complete intersection of degree [3] and L=O(4)
+
+        """
+        return "twisted Hodge diamond"
+
+    @property
+    def name(self):
+        return self.__repr__()
 
     def __str__(self):
         return str(self.pprint())
@@ -252,9 +302,15 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
         self.__i = i
 
     def __getitem__(self, k):
-        return twisted_ci.TwistedHodgeDiamond(
-            (len(self.__d) + 2, self.__d), k * self.__i
+        # TODO make this cleaner...
+        H = twisted_ci.TwistedHodgeDiamond((len(self.__d) + 2, self.__d), k * self.__i)
+        H = TwistedHodgeDiamond.from_matrix(H._TwistedHodgeDiamond__M)
+        H.rename(
+            "twisted Hodge diamond for complete intersection of "
+            + f"degree {self.__d} and L=O({self.__i * k})"
         )
+
+        return H
 
 
 class TwistedHilbertSchemeDiamond:
