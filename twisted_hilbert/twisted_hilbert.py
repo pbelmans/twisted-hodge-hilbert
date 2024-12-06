@@ -379,7 +379,9 @@ class TwistedHilbertSchemeDiamond:
     __diamond = None
 
     def __init__(self, S: TwistedSurfaceDiamonds, n):
-        self.__diamond = twisted_hodge_diamond([S[k] for k in range(n + 1)], n)
+        self.__diamond = TwistedHodgeDiamond.from_matrix(
+            twisted_hodge_diamond([S[k] for k in range(n + 1)], n)
+        )
 
     def pprint(self):
         return self.__diamond
