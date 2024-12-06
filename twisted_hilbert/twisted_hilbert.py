@@ -291,7 +291,7 @@ class TwistedHodgeDiamondRing(Singleton, Parent):
         if m in ZZ:
             m = matrix(ZZ, 1, 1, [m])
         elif isinstance(m, MPolynomial):
-            m = _to_matrix(m)
+            raise NotImplementedError()
         elif isinstance(m, (list, tuple)):
             m = matrix(m)
         elt = self.element_class(self, m)
