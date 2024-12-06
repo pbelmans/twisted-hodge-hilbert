@@ -279,9 +279,7 @@ class TwistedHodgeDiamond(Element):
             8
 
         """
-        p, q = key
-
-        return self.__M[p, q]
+        return self.__M[key[0], key[1]]
 
 
 class TwistedHodgeDiamondRing(Singleton, Parent):
