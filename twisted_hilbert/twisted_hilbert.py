@@ -82,11 +82,11 @@ def twisted_hodge_diamond(S, n):
 
     H = B(1)
 
-    for m in range(1, n + 1):
+    for k in range(1, n + 1):
         for p, q in cartesian_product([range(3), range(3)]):
             H *= (
-                1 - (-1) ** (p + q) * x ** (p + m - 1) * y ** (q + m - 1) * t**m
-            ) ** (-((-1) ** (p + q)) * S[m][p, q])
+                1 - (-1) ** (p + q) * x ** (p + k - 1) * y ** (q + k - 1) * t**k
+            ) ** (-((-1) ** (p + q)) * S[k][p, q])
 
     M = matrix.zero(ZZ, 2 * n + 1)
 
