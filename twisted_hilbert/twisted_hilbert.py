@@ -427,6 +427,32 @@ def TwistedHilbertSchemeDiamond(S: TwistedSurfaceDiamonds, n):
                        80        0
                             55
 
+    Anticanonically twisted Hodge diamond of Hilb^2 S where S is bielliptic order 2::
+
+        sage: TwistedHilbertSchemeDiamond(BiellipticSurface(2), 2).pprint()
+                          0
+                      0       0
+                  0       2       0
+              1       4       4       1
+          1       3       8       3       1
+              1       4       4       1
+                  0       2       0
+                      0       0
+                          0
+
+    Anticanonically twisted Hodge diamond of Hilb^2 S where S is bielliptic order 3::
+
+        sage: TwistedHilbertSchemeDiamond(BiellipticSurface(3), 2).pprint()
+                          0
+                      0       0
+                  0       0       0
+              1       1       1       0
+          1       2       2       1       0
+              1       1       1       0
+                  0       0       0
+                      0       0
+                          0
+
     """
     H = TwistedHodgeDiamond.from_matrix(
         twisted_hodge_diamond([S[k] for k in range(n + 1)], n)
