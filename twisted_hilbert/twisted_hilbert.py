@@ -33,6 +33,7 @@ AUTHORS:
 """
 
 import types
+
 from sage.categories.cartesian_product import cartesian_product
 from sage.matrix.constructor import matrix
 from sage.rings.integer_ring import ZZ
@@ -97,6 +98,60 @@ def twisted_hodge_diamond(S, n):
             pass
 
     return M
+
+
+class TwistedHodgeDiamond:
+    r"""
+    Container structure for twisted Hodge diamonds.
+
+    EXAMPLES:
+
+    """
+
+    __M = []
+
+    def __init__(self, M):
+        """
+        INPUT:
+
+        - ``M`` -- matrix encoding twisted Hodge diamond
+        """
+        assert M.is_square()
+
+        self.__M = matrix(M)
+
+    def pprint(self):
+        """Return the parallelogram as a Sage table object"""
+        T = []
+        d = self.__M.nrows()
+
+        for i in reversed(range(2 * d + 1)):
+            row = [""] * abs(d - i)
+
+            for j in range(max(0, i - d), min(i, d) + 1):
+                row.extend([self.__M[i - j, j], ""])
+
+            T.append(row)
+
+        # padding all rows to full length
+        for i in range(len(T)):
+            T[i].extend([""] * (2 * d - len(T[i]) + 1))
+
+        return table(T, align="center")
+
+    def __str__(self):
+        return str(self.pprint())
+
+    def __getitem__(self, key):
+        r"""Return the `(p,q)`th entry.
+
+        INPUT:
+
+        - ``key``: tuple of indices for the twisted Hodge diamond
+        """
+        p, q = key
+
+        return self.__M[p, q]
 
 
 class SurfacePair:
