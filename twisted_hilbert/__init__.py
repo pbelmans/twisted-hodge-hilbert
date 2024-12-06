@@ -1,15 +1,16 @@
-"""
-   isort:skip_file
-"""
-
 from .twisted_hilbert import (
-    twisted_hodge_diamond,
-    SurfacePair,
     CompleteIntersectionSurface,
+    HilbertSchemeTwist,
+    SurfaceTwists,
+    TwistedHodgeDiamond,
+    twisted_hodge_diamond,
 )
 
 __all__ = [
     "twisted_hodge_diamond",
+    "TwistedHodgeDiamond",
+    "HilbertSchemeTwist",
+    "SurfaceTwists",
+    # implemented surfaces
     "CompleteIntersectionSurface",
-    "SurfacePair",
 ]

@@ -120,7 +120,6 @@ class TwistedHodgeDiamond:
         self.__M = matrix(M)
 
     def pprint(self):
-        """Return the parallelogram as a Sage table object"""
         T = []
         d = self.__M.nrows()
 
@@ -150,10 +149,11 @@ class TwistedHodgeDiamond:
         """
         p, q = key
 
+        # TODO return TwistedHodgeDiamond?
         return self.__M[p, q]
 
 
-class SurfacePair:
+class SurfaceTwists:
     r"""
     Encodes the sheaf cohomology of a surface and powers of a line bundle
     """
@@ -166,7 +166,7 @@ class SurfacePair:
     @classmethod
     def from_list(cls, L):
         r"""
-        Construct a SurfacePair from a list of matrices
+        Construct a SurfaceTwists object from a list of matrices
 
         This is the basic approach, and limits the calculation of twisted Hodge
         numbers to however many entries are provided.
@@ -184,22 +184,23 @@ class SurfacePair:
             sage: P2[0] = matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
             sage: P2[1] = matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])
             sage: P2[2] = matrix([[28, 0, 0], [35, 0, 0], [10, 0, 0]])
-            sage: S = SurfacePair.from_list(P2)
+            sage: S = SurfaceTwists.from_list(P2)
 
         """
-        pair = SurfacePair()
+        pair = SurfaceTwists()
         pair.__L = list(map(matrix, L))
 
         return pair
 
     def __getitem__(self, k):
         r"""Get the ``k``-twisted Hodge diamond for the line bundle ``L``"""
+        # TODO return TwistedHodgeDiamond?
         return self.__L[k]
 
 
-class CompleteIntersectionSurface(SurfacePair):
+class CompleteIntersectionSurface(SurfaceTwists):
     r"""
-    SurfacePair for a complete intersection and the line bundle O(1)
+    SurfaceTwists for a complete intersection and the line bundle O(1)
     """
 
     __d = None
