@@ -32,13 +32,12 @@ AUTHORS:
 - Pieter Belmans (2024-12-12): initial version
 """
 
-import types
-
+import twisted_ci
 from sage.categories.cartesian_product import cartesian_product
 from sage.matrix.constructor import matrix
+from sage.misc.table import table
 from sage.rings.integer_ring import ZZ
 from sage.rings.power_series_ring import PowerSeriesRing
-from twisted_ci import TwistedHodgeDiamond
 
 
 def twisted_hodge_diamond(S, n):
@@ -214,4 +213,14 @@ class CompleteIntersectionSurface(SurfacePair):
         self.__d = d
 
     def __getitem__(self, k):
-        return TwistedHodgeDiamond((len(self.__d) + 2, self.__d), k)
+        return twisted_ci.TwistedHodgeDiamond((len(self.__d) + 2, self.__d), k)
+
+
+class HilbertSchemeTwist:
+    __S = None
+
+    def __init__(self, S: SurfaceTwists):
+        self.__S = S
+
+    def __getitem__(self, n):
+        return TwistedHodgeDiamond(twisted_hodge_diamond(self.__S, n))
