@@ -34,10 +34,15 @@ AUTHORS:
 
 import twisted_ci
 from sage.categories.cartesian_product import cartesian_product
+from sage.categories.rings import Rings
 from sage.matrix.constructor import matrix
+from sage.misc.fast_methods import Singleton
 from sage.misc.table import table
 from sage.rings.integer_ring import ZZ
+from sage.rings.polynomial.multi_polynomial import MPolynomial
 from sage.rings.power_series_ring import PowerSeriesRing
+from sage.structure.element import Element
+from sage.structure.parent import Parent
 
 
 def twisted_hodge_diamond(S, n):
@@ -99,7 +104,7 @@ def twisted_hodge_diamond(S, n):
     return M
 
 
-class TwistedHodgeDiamond:
+class TwistedHodgeDiamond(Element):
     r"""
     Container structure for twisted Hodge diamonds.
 
@@ -107,17 +112,24 @@ class TwistedHodgeDiamond:
 
     """
 
-    __M = []
+    __M = None
 
-    def __init__(self, M):
+    def __init__(self, parent, M):
         """
         INPUT:
 
         - ``M`` -- matrix encoding twisted Hodge diamond
         """
+        self.__M = M
+
+        Element.__init__(self, parent)
+
+    @classmethod
+    def from_matrix(cls, M):
+        M = matrix(M)
         assert M.is_square()
 
-        self.__M = matrix(M)
+        return TwistedHodgeDiamondRing()(M)
 
     def pprint(self):
         T = []
@@ -151,6 +163,30 @@ class TwistedHodgeDiamond:
 
         # TODO return TwistedHodgeDiamond?
         return self.__M[p, q]
+
+
+class TwistedHodgeDiamondRing(Singleton, Parent):
+    def __init__(self):
+        Parent.__init__(self, category=Rings().Commutative())
+
+    def _element_constructor_(self, *args, **keywords):
+        m = args[0]
+        if m in ZZ:
+            m = matrix(ZZ, 1, 1, [m])
+        elif isinstance(m, MPolynomial):
+            m = _to_matrix(m)
+        elif isinstance(m, (list, tuple)):
+            m = matrix(m)
+        elt = self.element_class(self, m)
+        return elt
+
+    def from_matrix(self, M):
+        return self.element_class(self, matrix(M))
+
+    def _repr_(self) -> str:
+        return "Ring of twisted Hodge diamonds"
+
+    Element = TwistedHodgeDiamond
 
 
 class TwistedSurfaceDiamonds:
