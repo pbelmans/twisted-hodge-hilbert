@@ -255,13 +255,32 @@ class TwistedHodgeDiamond(Element):
     def __getitem__(self, key):
         r"""Return the `(p,q)`th entry.
 
+        This is
+
+        ```math
+        \dim\mathrm{H}^q(X,\Omega_X^p\otimes L)
+        ```
+
+        corresponding to the entry indexed by `p` and `q` in the matrix.
+
         INPUT:
 
         - ``key``: tuple of indices for the twisted Hodge diamond
+
+        EXAMPLES:
+
+        The twisted Hodge diamond for the projective plane and anticanonical bundle::
+
+            sage: from twisted_hilbert import *
+            sage: H = TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])
+            sage: H[0, 0]
+            10
+            sage: H[1, 0]
+            8
+
         """
         p, q = key
 
-        # TODO return TwistedHodgeDiamond?
         return self.__M[p, q]
 
 
