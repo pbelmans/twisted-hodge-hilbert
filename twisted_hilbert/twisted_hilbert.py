@@ -142,6 +142,27 @@ class TwistedHodgeDiamond(Element):
 
     @classmethod
     def from_matrix(cls, M):
+        r"""
+        Construct a twisted Hodge diamond from a matrix
+
+        INPUT:
+
+        - ``M`` -- square matrix encoding twisted Hodge diamond
+
+        EXAMPLES:
+
+        The twisted Hodge diamond for the projective plane and anticanonical bundle::
+
+            sage: from twisted_hilbert import *
+            sage: H = TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])
+            sage: H.pprint()
+                          0
+                      0        0
+                  1       0        0
+                      8        0
+                          10
+        """
+
         M = matrix(M)
         assert M.is_square()
 
