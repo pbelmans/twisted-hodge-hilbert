@@ -1,16 +1,16 @@
 from .twisted_hilbert import (
     CompleteIntersectionSurface,
-    HilbertSchemeTwist,
-    SurfaceTwists,
+    TwistedHilbertSchemeDiamond,
     TwistedHodgeDiamond,
+    TwistedSurfaceDiamonds,
     twisted_hodge_diamond,
 )
 
 __all__ = [
     "twisted_hodge_diamond",
     "TwistedHodgeDiamond",
-    "HilbertSchemeTwist",
-    "SurfaceTwists",
+    "TwistedHilbertSchemeDiamond",
+    "TwistedSurfaceDiamonds",
     # implemented surfaces
     "CompleteIntersectionSurface",
 ]

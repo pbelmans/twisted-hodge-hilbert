@@ -153,9 +153,9 @@ class TwistedHodgeDiamond:
         return self.__M[p, q]
 
 
-class SurfaceTwists:
+class TwistedSurfaceDiamonds:
     r"""
-    Encodes the sheaf cohomology of a surface and powers of a line bundle
+    Encodes twisted Hodge diamonds of surface and powers of a line bundle
     """
 
     __L = None
@@ -166,7 +166,7 @@ class SurfaceTwists:
     @classmethod
     def from_list(cls, L):
         r"""
-        Construct a SurfaceTwists object from a list of matrices
+        Construct a TwistedSurfaceDiamonds object from a list of matrices
 
         This is the basic approach, and limits the calculation of twisted Hodge
         numbers to however many entries are provided.
@@ -184,10 +184,10 @@ class SurfaceTwists:
             sage: P2[0] = matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
             sage: P2[1] = matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])
             sage: P2[2] = matrix([[28, 0, 0], [35, 0, 0], [10, 0, 0]])
-            sage: S = SurfaceTwists.from_list(P2)
+            sage: S = TwistedSurfaceDiamonds.from_list(P2)
 
         """
-        pair = SurfaceTwists()
+        pair = TwistedSurfaceDiamonds()
         pair.__L = list(map(matrix, L))
 
         return pair
@@ -198,9 +198,9 @@ class SurfaceTwists:
         return self.__L[k]
 
 
-class CompleteIntersectionSurface(SurfaceTwists):
+class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
     r"""
-    SurfaceTwists for a complete intersection and the line bundle O(1)
+    TwistedSurfaceDiamonds for a complete intersection and the line bundle O(1)
     """
 
     __d = None
@@ -217,10 +217,10 @@ class CompleteIntersectionSurface(SurfaceTwists):
         return twisted_ci.TwistedHodgeDiamond((len(self.__d) + 2, self.__d), k)
 
 
-class HilbertSchemeTwist:
+class TwistedHilbertSchemeDiamond:
     __S = None
 
-    def __init__(self, S: SurfaceTwists):
+    def __init__(self, S: TwistedSurfaceDiamonds):
         self.__S = S
 
     def __getitem__(self, n):
