@@ -32,10 +32,12 @@ AUTHORS:
 - Pieter Belmans (2024-12-12): initial version
 """
 
+import types
 from sage.categories.cartesian_product import cartesian_product
 from sage.matrix.constructor import matrix
 from sage.rings.integer_ring import ZZ
 from sage.rings.power_series_ring import PowerSeriesRing
+from twisted_ci import TwistedHodgeDiamond
 
 
 def twisted_hodge_diamond(S, n):
@@ -95,3 +97,66 @@ def twisted_hodge_diamond(S, n):
             pass
 
     return M
+
+
+class SurfacePair:
+    r"""
+    Encodes the sheaf cohomology of a surface and powers of a line bundle
+    """
+
+    __L = None
+
+    def __init__(self):
+        pass
+
+    @classmethod
+    def from_list(cls, L):
+        r"""
+        Construct a SurfacePair from a list of matrices
+
+        This is the basic approach, and limits the calculation of twisted Hodge
+        numbers to however many entries are provided.
+
+        INPUT:
+
+        - ``L`` -- list of 3x3 matrices with twisted Hodge numbers
+
+        EXAMPLES:
+
+        Twisted Hodge numbers of the projective plane::
+
+            sage: from twisted_hilbert import *
+            sage: P2 = [None, None, None]
+            sage: P2[0] = matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+            sage: P2[1] = matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])
+            sage: P2[2] = matrix([[28, 0, 0], [35, 0, 0], [10, 0, 0]])
+            sage: S = SurfacePair.from_list(P2)
+
+        """
+        pair = SurfacePair()
+        pair.__L = list(map(matrix, L))
+
+        return pair
+
+    def __getitem__(self, k):
+        r"""Get the ``k``-twisted Hodge diamond for the line bundle ``L``"""
+        return self.__L[k]
+
+
+class CompleteIntersectionSurface(SurfacePair):
+    r"""
+    SurfacePair for a complete intersection and the line bundle O(1)
+    """
+
+    __d = None
+
+    def __init__(self, d):
+        try:
+            len(d)
+        except TypeError:
+            d = [d]
+
+        self.__d = d
+
+    def __getitem__(self, k):
+        return TwistedHodgeDiamond((len(self.__d) + 2, self.__d), k)
