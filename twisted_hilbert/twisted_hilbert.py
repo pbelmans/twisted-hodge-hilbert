@@ -375,35 +375,34 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
         return H
 
 
-class TwistedHilbertSchemeDiamond:
-    __diamond = None
+def TwistedHilbertSchemeDiamond(S: TwistedSurfaceDiamonds, n):
+    r"""
+    Construct twisted Hodge diamond Hilbert schemes of $n$ points on $S$
 
-    def __init__(self, S: TwistedSurfaceDiamonds, n):
-        self.__diamond = TwistedHodgeDiamond.from_matrix(
-            twisted_hodge_diamond([S[k] for k in range(n + 1)], n)
-        )
+    EXAMPLES:
 
-    def pprint(self):
-        r"""Pretty print the twisted Hodge diamond of a Hilbert scheme
+    Anticanonically twisted Hodge diamond of Hilb^2 P^2::
 
-        EXAMPLES:
+        sage: from twisted_hilbert import *
+        sage: S = CompleteIntersectionSurface([], 3)
+        sage: H = TwistedHilbertSchemeDiamond(S, 2)
+        sage: H
+        twisted Hodge diamond for Hilb^2 S
+        sage: H.pprint()
+                            0
+                       0         0
+                  0         0        0
+              0        0         0       0
+          1       10        0        0       0
+              8        35        0       0
+                  38        28       0
+                       80        0
+                            55
 
-        Anticanonically twisted Hodge diamond of Hilb^2 P^2::
+    """
+    H = TwistedHodgeDiamond.from_matrix(
+        twisted_hodge_diamond([S[k] for k in range(n + 1)], n)
+    )
+    H.rename(f"twisted Hodge diamond for Hilb^{n} S")
 
-            sage: from twisted_hilbert import *
-            sage: S = CompleteIntersectionSurface([], 3)
-            sage: H = TwistedHilbertSchemeDiamond(S, 2)
-            sage: H.pprint()
-                                0
-                           0         0
-                      0         0        0
-                  0        0         0       0
-              1       10        0        0       0
-                  8        35        0       0
-                      38        28       0
-                           80        0
-                                55
-
-        """
-
-        return self.__diamond.pprint()
+    return H
