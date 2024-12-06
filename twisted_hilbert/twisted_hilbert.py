@@ -384,4 +384,26 @@ class TwistedHilbertSchemeDiamond:
         )
 
     def pprint(self):
-        return self.__diamond
+        r"""Pretty print the twisted Hodge diamond of a Hilbert scheme
+
+        EXAMPLES:
+
+        Anticanonically twisted Hodge diamond of Hilb^2 P^2::
+
+            sage: from twisted_hilbert import *
+            sage: S = CompleteIntersectionSurface([], 3)
+            sage: H = TwistedHilbertSchemeDiamond(S, 2)
+            sage: H.pprint()
+                                0
+                           0         0
+                      0         0        0
+                  0        0         0       0
+              1       10        0        0       0
+                  8        35        0       0
+                      38        28       0
+                           80        0
+                                55
+
+        """
+
+        return self.__diamond.pprint()
