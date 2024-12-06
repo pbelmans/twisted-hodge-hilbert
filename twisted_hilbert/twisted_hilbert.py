@@ -307,13 +307,11 @@ class TwistedHodgeDiamondRing(Singleton, Parent):
 class TwistedSurfaceDiamonds:
     r"""Encodes twisted Hodge diamonds of surface and powers of a line bundle"""
 
-    __L = None
-
     def __init__(self):
         pass
 
     @classmethod
-    def from_list(cls, L):
+    def from_list(cls, diamonds):
         r"""
         Construct a TwistedSurfaceDiamonds object from a list of matrices
 
@@ -337,12 +335,12 @@ class TwistedSurfaceDiamonds:
 
         """
         pair = TwistedSurfaceDiamonds()
-        pair.__L = list(map(TwistedHodgeDiamond.from_matrix, L))
+        pair.__diamonds = list(map(TwistedHodgeDiamond.from_matrix, diamonds))
 
         return pair
 
     def __getitem__(self, k):
-        r"""Get the ``k``-twisted Hodge diamond for the line bundle ``L``"""
+        r"""Get the twisted Hodge diamond for the line bundle ``L^k``"""
         return self.__L[k]
 
 
