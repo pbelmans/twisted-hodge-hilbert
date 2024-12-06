@@ -216,7 +216,9 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
         self.__i = i
 
     def __getitem__(self, k):
-        return twisted_ci.TwistedHodgeDiamond((len(self.__d) + 2, self.__d), k * self.__i)
+        return twisted_ci.TwistedHodgeDiamond(
+            (len(self.__d) + 2, self.__d), k * self.__i
+        )
 
 
 class TwistedHilbertSchemeDiamond:
