@@ -320,7 +320,7 @@ class TwistedSurfaceDiamonds:
 
         INPUT:
 
-        - ``L`` -- list of 3x3 matrices with twisted Hodge numbers
+        - ``diamonds`` -- list of 3x3 matrices with twisted Hodge numbers
 
         EXAMPLES:
 
