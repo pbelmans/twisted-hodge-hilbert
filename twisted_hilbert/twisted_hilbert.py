@@ -403,6 +403,31 @@ class BiellipticSurface(TwistedSurfaceDiamonds):
             raise NotImplementedError()
 
 
+class EnriquesSurface(TwistedSurfaceDiamonds):
+    r"""
+    TwistedSurfaceDiamonds for an Enriques surface and the (anti)canonical line bundle
+
+    EXAMPLES:
+
+    The following is Appendix B of [AJM.2017.v21.n6.a4]
+
+        sage: from twisted_hilbert import *
+        sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), 2)[3, 1]
+        10
+
+    * [AJM.2017.v21.n6.a4] Taro Hayashi
+      Universal covering Calabi–Yau manifolds of the Hilbert schemes of points of
+      Enriques surfaces
+      https://dx.doi.org/10.4310/AJM.2017.v21.n6.a4
+    """
+
+    def __getitem__(self, k):
+        if k % 2 == 0:
+            return TwistedHodgeDiamond.from_matrix([[1, 0, 0], [0, 10, 0], [0, 0, 1]])
+        if k % 2 == 1:
+            return TwistedHodgeDiamond.from_matrix([[0, 0, 1], [0, 10, 0], [1, 0, 0]])
+
+
 def TwistedHilbertSchemeDiamond(S: TwistedSurfaceDiamonds, n):
     r"""
     Construct twisted Hodge diamond Hilbert schemes of $n$ points on $S$
