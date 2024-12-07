@@ -305,10 +305,11 @@ class TwistedHodgeDiamondRing(Singleton, Parent):
 
 
 class TwistedSurfaceDiamonds:
-    r"""Encodes twisted Hodge diamonds of surface and powers of a line bundle"""
+    r"""Encodes twisted Hodge diamonds of surface and powers of a line bundle
 
-    def __init__(self):
-        pass
+    This makes it possible to implement both a class that knows all about a surface
+    and one that only contains a finite amount of data.
+    """
 
     @classmethod
     def from_list(cls, diamonds):
@@ -375,9 +376,7 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
 
 class BiellipticSurface(TwistedSurfaceDiamonds):
     r"""
-    TwistedSurfaceDiamonds for a bielliptic surface and the line bundle O(1)
-
-    Here O(1) refers to the fraction of the canonical bundle.
+    TwistedSurfaceDiamonds for a bielliptic surface and the anticanonical line bundle
     """
 
     def __init__(self, order):
