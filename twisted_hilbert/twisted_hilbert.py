@@ -493,6 +493,12 @@ def TwistedHilbertSchemeDiamond(S: TwistedSurfaceDiamonds, n):
     r"""
     Construct twisted Hodge diamond Hilbert schemes of $n$ points on $S$
 
+    INPUT:
+
+    - ``S`` -- twisted Hodge diamonds for powers of a line bundle
+
+    - ``n`` -- number of points
+
     EXAMPLES:
 
     Anticanonically twisted Hodge diamond of Hilb^2 P^2::
