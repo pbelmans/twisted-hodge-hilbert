@@ -213,6 +213,44 @@ class TwistedHodgeDiamond(Element):
 
         return table(T, align="center")
 
+    def as_parallelogram(self):
+        r"""Return the twisted Hodge diamond as polyvector parallelogram
+
+        It is up to the user to make sure that the twisted Hodge diamond is computed
+        using the anticanonical bundle.
+
+        EXAMPLES:
+
+        Our favourite example is still `Hilb^2 P^2`:
+
+            sage: from twisted_hilbert import *
+            sage: H = TwistedHilbertSchemeDiamond(CompleteIntersectionSurface([], 3), 2)
+            sage: H.as_parallelogram()
+              1
+              0   8
+              0   10   38
+              0   0    35   80
+              0   0    0    28   55
+                  0    0    0    0
+                       0    0    0
+                            0    0
+                                 0
+        """
+        T = []
+        d = self.dimension()
+
+        for n in range(2 * d + 1):
+            T.append([])
+
+            for p in range(d + 1):
+                q = n - p
+                if q in range(d + 1) and p in range(d + 1):
+                    T[-1].append(self[d - p, q])
+                else:
+                    T[-1].append("")
+
+        return table(T, align="center")
+
     def _repr_(self):
         r"""Output diagnostic information
 
