@@ -413,6 +413,16 @@ class EnriquesSurface(TwistedSurfaceDiamonds):
         sage: from twisted_hilbert import *
         sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), 2)[3, 1]
         10
+        sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), 2).pprint()
+                           0
+                       0        0
+                  0        1        0
+              0        0        0        0
+          1       10       66       10       1
+              0        0        0        0
+                  0        1        0
+                       0        0
+                           0
 
     * [AJM.2017.v21.n6.a4] Taro Hayashi
       Universal covering Calabi–Yau manifolds of the Hilbert schemes of points of
