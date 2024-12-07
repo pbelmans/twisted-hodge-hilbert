@@ -166,6 +166,20 @@ class TwistedHodgeDiamond(Element):
 
         return TwistedHodgeDiamondRing()(M)
 
+    def dimension(self):
+        r"""Dimension of the variety underlying the twisted Hodge diamond
+
+        EXAMPLES::
+
+            sage: from twisted_hilbert import *
+            sage: EnriquesSurface()[0].dimension()
+            2
+            sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), Integer(3)).dimension()
+            6
+
+        """
+        return self.__M.nrows() - 1
+
     def pprint(self):
         r"""Pretty print the twisted Hodge diamond
 
@@ -183,7 +197,7 @@ class TwistedHodgeDiamond(Element):
                           10
         """
         T = []
-        d = self.__M.nrows() - 1
+        d = self.dimension()
 
         for i in reversed(range(2 * d + 1)):
             row = [""] * abs(d - i)
