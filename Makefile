@@ -1,3 +1,15 @@
+SPHINXOPTS    ?=
+SPHINXBUILD   ?= sage --python -msphinx
+SOURCEDIR     =
+BUILDDIR      = _build
+
+help:
+	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+%: Makefile
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+
 install:
 	sage -pip install --upgrade -v -e .
 	rm -rf twisted_hodge_hilbert.egg-info
