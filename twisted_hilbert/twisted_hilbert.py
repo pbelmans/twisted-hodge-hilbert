@@ -431,6 +431,117 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
         return H
 
 
+class ProductSurface(TwistedSurfaceDiamonds):
+    r"""
+    TwistedSurfaceDiamonds for the product of two curves and the anticanonical bundle
+    """
+
+    def __init__(self, g, h):
+        assert g >= 0 and h >= 0, "genera need to be positive"
+
+        self.__g = g
+        self.__h = h
+
+    @classmethod
+    def H(cls, g, i):
+        r"""Cohomology of ith power of anticanonical line bundle on genus g curve
+
+        EXAMPLES:
+
+            The projective line:
+
+                sage: from twisted_hilbert import *
+                sage: ProductSurface.H(0, 0)
+                [1, 0]
+                sage: ProductSurface.H(0, 3)
+                [7, 0]
+                sage: ProductSurface.H(0, -3)
+                [0, 5]
+
+            On an elliptic curve:
+
+                sage: ProductSurface.H(1, 0)
+                [1, 1]
+                sage: ProductSurface.H(1, 5)
+                [1, 1]
+
+            On a curve of genus 3:
+
+                sage: from twisted_hilbert import *
+                sage: ProductSurface.H(3, 0)
+                [1, 3]
+                sage: ProductSurface.H(3, -1)
+                [3, 1]
+                sage: ProductSurface.H(3, 3)
+                [0, 14]
+                sage: ProductSurface.H(3, -3)
+                [10, 0]
+
+        """
+        if g == 0:
+            if i <= -1:
+                return [0, -2 * i - 1]
+            if i >= 0:
+                return [2 * i + 1, 0]
+        if g == 1:
+            return [1, 1]
+        if g >= 2:
+            if i <= -2:
+                return [(-2 * i - 1) * (g - 1), 0]
+            if i == -1:
+                return [g, 1]
+            if i == 0:
+                return [1, g]
+            if i >= 1:
+                return [0, (2 * i + 1) * (g - 1)]
+
+    def __getitem__(self, k):
+        r"""Get the twisted Hodge diamond for the kth power of the anticanonical bundle
+
+        EXAMPLES:
+
+        The quadric is the product of two curves of genus 0::
+
+            sage: from twisted_hilbert import *
+            sage: S = ProductSurface(0, 0)
+            sage: T = CompleteIntersectionSurface(2, 2)
+            sage: T[0] == S[0]
+            True
+            sage: T[3] == S[3]
+            True
+            sage: T[-5] == S[-5]
+            True
+
+        """
+        # introduce shorthands
+        g = self.__g
+        h = self.__h
+        H = ProductSurface.H
+
+        return TwistedHodgeDiamond.from_matrix(
+            [
+                [
+                    H(g, k)[0] * H(h, k)[0],
+                    H(g, k)[0] * H(h, k)[1] + H(g, k)[1] * H(h, k)[0],
+                    H(g, k)[1] * H(h, k)[1],
+                ],
+                [
+                    H(g, k)[0] * H(h, k - 1)[0] + H(g, k - 1)[0] * H(h, k)[0],
+                    H(g, k)[0] * H(h, k - 1)[1]
+                    + H(g, k)[1] * H(h, k - 1)[0]
+                    + H(g, k - 1)[0] * H(h, k)[1]
+                    + H(g, k - 1)[1] * H(h, k)[0],
+                    H(g, k)[1] * H(h, k - 1)[1] + H(g, k - 1)[1] * H(h, k)[1],
+                ],
+                [
+                    H(g, k - 1)[0] * H(h, k - 1)[0],
+                    H(g, k - 1)[0] * H(h, k - 1)[1] + H(g, k - 1)[1] * H(h, k - 1)[0],
+                    H(g, k - 1)[1] * H(h, k - 1)[1],
+                ],
+            ]
+        )
+
+
 class BiellipticSurface(TwistedSurfaceDiamonds):
     r"""
     TwistedSurfaceDiamonds for a bielliptic surface and the anticanonical line bundle
