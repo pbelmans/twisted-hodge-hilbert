@@ -50,7 +50,7 @@ def twisted_hodge_diamond(S, n):
     r"""
     Computes the twisted Hodge diamond of a Hilbert scheme of points
 
-    This implements the twisted Hodge number formula describes above, to compute
+    This implements the twisted Hodge number formula described above, to compute
     the entries of the twisted Hodge diamond for a given number of points,
     i.e., the matrix describing
 
@@ -302,6 +302,10 @@ class TwistedHodgeDiamond(Element):
 
         """
         return str(self.pprint())
+
+    def __eq__(self, other):
+        r"""Compare two twisted Hodge diamonds"""
+        return self.__M == other.__M
 
     def __getitem__(self, key):
         r"""Return the `(p,q)`th entry.
