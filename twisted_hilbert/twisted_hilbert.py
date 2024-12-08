@@ -33,6 +33,7 @@ AUTHORS:
 """
 
 import twisted_ci
+from sage.arith.misc import binomial
 from sage.categories.cartesian_product import cartesian_product
 from sage.categories.rings import Rings
 from sage.matrix.constructor import matrix
@@ -487,6 +488,39 @@ class EnriquesSurface(TwistedSurfaceDiamonds):
             return TwistedHodgeDiamond.from_matrix([[1, 0, 0], [0, 10, 0], [0, 0, 1]])
         if k % 2 == 1:
             return TwistedHodgeDiamond.from_matrix([[0, 0, 1], [0, 10, 0], [1, 0, 0]])
+
+
+def HilbertSchemeDeformations(HKR: TwistedHodgeDiamond):
+    r"""
+    The degree 0, 1 and 2 cohomology of the tangent bundle of a Hilbert scheme
+
+    This implements Theorem 1.5 of [Fu]. It it expected that the user inputs the
+    anticanonical Hodge diamond, describing the Hochschild cohomology of the surface.
+
+    For this one doesn't have to be able to compute all the twisted Hodge diamonds
+    required to describe the twisted Hodge diamond giving all of the Hochschild
+    cohomology of the Hilbert scheme, a single twisted Hodge diamond, for the
+    anticanonical twist, suffices.
+
+    EXAMPLES:
+
+    Our favourite example is still `Hilb^2 P^2`:
+
+        sage: from twisted_hilbert import *
+        sage: HilbertSchemeDeformations(CompleteIntersectionSurface([], 3)[1])
+        [8, 10, 0]
+
+    """
+    return [
+        HKR[1, 0],
+        HKR[1, 1] + HKR[1, 0] * HKR[2, 1] + HKR[0, 0],
+        HKR[1, 2]
+        + HKR[1, 1] * HKR[2, 1]
+        + HKR[1, 0] * HKR[2, 2]
+        + HKR[1, 0] * binomial(HKR[2, 1], 2)
+        + HKR[2, 1] * HKR[0, 0]
+        + HKR[0, 1],
+    ]
 
 
 def TwistedHilbertSchemeDiamond(S: TwistedSurfaceDiamonds, n):
