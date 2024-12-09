@@ -15,6 +15,8 @@ Twisted Hodge diamonds
     :special-members:
     :member-order: bysource
 
+.. autofunction:: HilbertSchemeDeformations
+
 .. autoclass:: twisted_hilbert.TwistedHodgeDiamond
     :members:
     :special-members:

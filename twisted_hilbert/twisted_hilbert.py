@@ -731,7 +731,7 @@ def HilbertSchemeDeformations(HKR: TwistedHodgeDiamond):
 
     EXAMPLES:
 
-    Our favourite example is still `Hilb^2 P^2`:
+    Our favourite example is still $\\operatorname{Hilb}^2\\mathbb{P}^2$::
 
         sage: from twisted_hilbert import *
         sage: HilbertSchemeDeformations(CompleteIntersectionSurface([], 3)[1])
