@@ -450,6 +450,53 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
     __i = 1
 
     def __init__(self, d, i=1):
+        r"""
+        Construct a complete intersection
+
+        The twisted Hodge numbers for complete intersection surfaces are computed
+        using [twisted-hodge-ci].
+
+        * [twisted-hodge-ci] Twisted Hodge numbers for complete intersections
+        https://github.com/pbelmans/twisted-hodge-ci
+
+        INPUT:
+
+        - ``d`` -- degree, or list of degrees
+
+        - ``i`` (default: 1) -- power of $\\mathcal{O}(1)$ to be used
+
+        EXAMPLES:
+
+        Anticanonically twisted projective plane::
+
+            sage: from twisted_hilbert import *
+            sage: CompleteIntersectionSurface([], 3)[1].pprint()
+                      0
+                  0        0
+              1       0        0
+                  8        0
+                      10
+
+        Quadric surface with default twist::
+
+            sage: CompleteIntersectionSurface(2)[1].pprint()
+                      0
+                  0       0
+              0       0       0
+                  0       0
+                      4
+
+        del Pezzo surface of degree 4 with default (and anticanonical) twist::
+
+            sage: CompleteIntersectionSurface([2, 2])[1].pprint()
+                      0
+                  0       0
+              1       2       0
+                  0       0
+                      5
+
+        """
+
         try:
             len(d)
         except TypeError:
