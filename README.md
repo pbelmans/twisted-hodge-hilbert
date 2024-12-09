@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14334379.svg)](https://doi.org/10.5281/zenodo.14334379)
 [![license](https://badgen.net/github/license/pbelmans/twisted-hodge-hilbert)](https://github.com/pbelmans/twisted-hodge-hilbert/blob/master/LICENSE)
 
 [![tests](https://github.com/pbelmans/twisted-hodge-hilbert/actions/workflows/tests.yml/badge.svg)](https://github.com/pbelmans/twisted-hodge-hilbert/actions)
@@ -74,9 +75,9 @@ or as [a pdf](https://twisted-hilbert.ncag.info/documentation.pdf).
 ## How to cite
 
 If you have used this code in any way,
-please consider citing it as explained on [Zenodo](TODO).
+please consider citing it as explained on [Zenodo](https://doi.org/10.5281/zenodo.14334379).
+https://doi.org/10.5281/zenodo.14334379
 You can choose to cite a specific version, or always the latest version.
-For the latter you can use `TODO`.
 
 The following BibTeX entry is a good starting point:
 
@@ -85,10 +86,10 @@ The following BibTeX entry is a good starting point:
   author = {Belmans, Pieter},
   title = {Twisted Hodge numbers for Hilbert schemes of points},
   url = {https://github.com/pbelmans/twisted-hodge-hilbert},
-  doi = {TODO},
+  doi = {10.5281/zenodo.14334379},
 }
 ```
 
 which leads to something like
 
-> Pieter Belmans. _Twisted Hodge numbers for Hilbert schemes of points_. doi:TODO. url: ht<span>tps://github.com/pbelmans/twisted-hodge-hilbert.
+> Pieter Belmans. _Twisted Hodge numbers for Hilbert schemes of points_. doi:10.5281/zenodo.14334379. url: ht<span>tps://github.com/pbelmans/twisted-hodge-hilbert.
