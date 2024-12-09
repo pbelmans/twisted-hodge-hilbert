@@ -529,38 +529,40 @@ class ProductSurface(TwistedSurfaceDiamonds):
         self.__h = h
 
     @classmethod
-    def H(cls, g, i):
-        r"""Cohomology of ith power of anticanonical line bundle on genus g curve
+    def __H(cls, g, i):
+        r"""Cohomology of $i$th power of anticanonical line bundle on genus $g$ curve
+
+        Helper function, not to be called directly.
 
         EXAMPLES:
 
             The projective line:
 
                 sage: from twisted_hilbert import *
-                sage: ProductSurface.H(0, 0)
+                sage: ProductSurface._ProductSurface__H(0, 0)
                 [1, 0]
-                sage: ProductSurface.H(0, 3)
+                sage: ProductSurface._ProductSurface__H(0, 3)
                 [7, 0]
-                sage: ProductSurface.H(0, -3)
+                sage: ProductSurface._ProductSurface__H(0, -3)
                 [0, 5]
 
             On an elliptic curve:
 
-                sage: ProductSurface.H(1, 0)
+                sage: ProductSurface._ProductSurface__H(1, 0)
                 [1, 1]
-                sage: ProductSurface.H(1, 5)
+                sage: ProductSurface._ProductSurface__H(1, 5)
                 [1, 1]
 
             On a curve of genus 3:
 
                 sage: from twisted_hilbert import *
-                sage: ProductSurface.H(3, 0)
+                sage: ProductSurface._ProductSurface__H(3, 0)
                 [1, 3]
-                sage: ProductSurface.H(3, -1)
+                sage: ProductSurface._ProductSurface__H(3, -1)
                 [3, 1]
-                sage: ProductSurface.H(3, 3)
+                sage: ProductSurface._ProductSurface__H(3, 3)
                 [0, 14]
-                sage: ProductSurface.H(3, -3)
+                sage: ProductSurface._ProductSurface__H(3, -3)
                 [10, 0]
 
         """
@@ -602,7 +604,7 @@ class ProductSurface(TwistedSurfaceDiamonds):
         # introduce shorthands
         g = self.__g
         h = self.__h
-        H = ProductSurface.H
+        H = ProductSurface.__H
 
         return TwistedHodgeDiamond.from_matrix(
             [
