@@ -334,7 +334,7 @@ class TwistedHodgeDiamond(Element):
 
         EXAMPLES:
 
-            Twisted Hodge diamonds for bielliptic surfaces are (not) the same::
+        Twisted Hodge diamonds for bielliptic surfaces are (not) the same::
 
             sage: from twisted_hilbert import *
             sage: BiellipticSurface(2)[0] == BiellipticSurface(3)[0]
@@ -347,13 +347,13 @@ class TwistedHodgeDiamond(Element):
         return self.__M == other.__M
 
     def __getitem__(self, key):
-        r"""Return the `(p,q)`th entry.
+        r"""Return $\\mathrm{h}^{p,q}(X,L)$
 
         This is
 
-        ```math
-        \dim\mathrm{H}^q(X,\Omega_X^p\otimes L)
-        ```
+        .. MATH::
+
+            \dim\mathrm{H}^q(X,\Omega_X^p\otimes L)
 
         corresponding to the entry indexed by `p` and `q` in the matrix.
 
@@ -443,7 +443,7 @@ class TwistedSurfaceDiamonds:
 
 class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
     r"""
-    TwistedSurfaceDiamonds for a complete intersection and the line bundle O(1)
+    TwistedSurfaceDiamonds for a complete intersection and (power of) $\\mathcal{O}(1)$
     """
 
     __d = None
