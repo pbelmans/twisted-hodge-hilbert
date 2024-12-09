@@ -326,7 +326,24 @@ class TwistedHodgeDiamond(Element):
         return str(self.pprint())
 
     def __eq__(self, other):
-        r"""Compare two twisted Hodge diamonds"""
+        r"""Compare two twisted Hodge diamonds
+
+        INPUT:
+
+        - ``other`` -- the other twisted Hodge diamond
+
+        EXAMPLES:
+
+            Twisted Hodge diamonds for bielliptic surfaces are (not) the same::
+
+            sage: from twisted_hilbert import *
+            sage: BiellipticSurface(2)[0] == BiellipticSurface(3)[0]
+            True
+            sage: BiellipticSurface(2)[1] == BiellipticSurface(3)[1]
+            False
+
+        """
+
         return self.__M == other.__M
 
     def __getitem__(self, key):
