@@ -606,6 +606,8 @@ class ProductSurface(TwistedSurfaceDiamonds):
     def __getitem__(self, k):
         r"""Get the twisted Hodge diamond for the kth power of the anticanonical bundle
 
+        - ``k`` -- power of the anticanonical bundle
+
         EXAMPLES:
 
         The quadric is the product of two curves of genus 0::
@@ -663,6 +665,94 @@ class BiellipticSurface(TwistedSurfaceDiamonds):
         self.__order = order
 
     def __getitem__(self, k):
+        r"""Get the twisted Hodge diamond for the kth power of the anticanonical bundle
+
+        INPUT:
+
+        - ``k`` -- power of the anticanonical bundle
+
+        The calculations are based on the basic results of Section 4.3 of [2309.06244],
+        and provide an independent verification of the conclusions.
+
+        EXAMPLES:
+
+        The bigraded version of Lemma 4.7::
+
+            sage: from twisted_hilbert import *
+            sage: BiellipticSurface(2)[1].as_parallelogram()
+              1
+              1   1
+              0   2   0
+                  1   1
+                      1
+            sage: BiellipticSurface(3)[1].as_parallelogram()
+              1
+              1   1
+              0   1   0
+                  0   0
+                      0
+            sage: BiellipticSurface(4)[1].as_parallelogram()
+              1
+              1   1
+              0   1   0
+                  0   0
+                      0
+            sage: BiellipticSurface(6)[1].as_parallelogram()
+              1
+              1   1
+              0   1   0
+                  0   0
+                      0
+
+        The bigraded version of Proposition 4.9::
+
+            sage: S = BiellipticSurface(2)
+            sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()
+              1
+              1   1
+              0   3   0
+              0   4   4   0
+              0   2   8   2   0
+                  0   4   4   0
+                      0   3   0
+                          1   1
+                              1
+            sage: S = BiellipticSurface(3)
+            sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()
+              1
+              1   1
+              0   2   0
+              0   1   1   0
+              0   0   2   0   0
+                  0   1   1   0
+                      0   1   0
+                          0   0
+                              0
+            sage: S = BiellipticSurface(4)
+            sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()
+              1
+              1   1
+              0   2   0
+              0   1   1   0
+              0   0   1   0   0
+                  0   0   0   0
+                      0   0   0
+                          0   0
+                              0
+            sage: S = BiellipticSurface(6)
+            sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()
+              1
+              1   1
+              0   2   0
+              0   1   1   0
+              0   0   1   0   0
+                  0   0   0   0
+                      0   0   0
+                          0   0
+                              0
+
+        """
+
         if self.__order == 2:
             diamonds = [
                 matrix([[1, 1, 0], [1, 2, 1], [0, 1, 1]]),
@@ -676,8 +766,24 @@ class BiellipticSurface(TwistedSurfaceDiamonds):
                 matrix([[0, 1, 1], [0, 1, 1], [0, 0, 0]]),
             ]
             return TwistedHodgeDiamond.from_matrix(diamonds[k % 3])
-        if self.__order in [4, 6]:
-            raise NotImplementedError()
+        if self.__order == 4:
+            diamonds = [
+                matrix([[1, 1, 0], [1, 2, 1], [0, 1, 1]]),
+                matrix([[0, 0, 0], [1, 1, 0], [1, 1, 0]]),
+                matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]]),
+                matrix([[0, 1, 1], [0, 1, 1], [0, 0, 0]]),
+            ]
+            return TwistedHodgeDiamond.from_matrix(diamonds[k % 4])
+        if self.__order == 6:
+            diamonds = [
+                matrix([[1, 1, 0], [1, 2, 1], [0, 1, 1]]),
+                matrix([[0, 0, 0], [1, 1, 0], [1, 1, 0]]),
+                matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]]),
+                matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]]),
+                matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]]),
+                matrix([[0, 1, 1], [0, 1, 1], [0, 0, 0]]),
+            ]
+            return TwistedHodgeDiamond.from_matrix(diamonds[k % 6])
 
 
 class EnriquesSurface(TwistedSurfaceDiamonds):
