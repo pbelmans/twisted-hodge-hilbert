@@ -1,3 +1,5 @@
+[![license](https://badgen.net/github/license/pbelmans/twisted-hodge-hilbert)](https://github.com/pbelmans/twisted-hodge-hilbert/blob/master/LICENSE)
+
 [![tests](https://github.com/pbelmans/twisted-hodge-hilbert/actions/workflows/tests.yml/badge.svg)](https://github.com/pbelmans/twisted-hodge-hilbert/actions)
 
 # Twisted Hodge numbers for Hilbert schemes of points
