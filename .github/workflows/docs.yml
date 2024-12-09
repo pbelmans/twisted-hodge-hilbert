@@ -52,14 +52,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+        uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           path: github-artifacts
       - name: Move docs
         run: mkdir -p github-deploy && mv github-artifacts/*/* github-deploy
       - name: Deploy on orphan branch
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./github-deploy
