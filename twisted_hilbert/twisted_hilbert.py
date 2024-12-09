@@ -1,16 +1,20 @@
 r"""
 Compute twisted Hodge numbers for Hilbert schemes of points
 
-We implement the _twisted Hodge number conjecture_ as stated in Conjecture E
-of [2309.06244] and subsequently proven in [Fu].
+We implement the twisted Hodge number formula for Hilbert schemes of points on surfaces,
+as
+
+* stated in Conjecture E of [2309.06244],
+* proven in [Fu].
 
 It reads
 
-```math
+.. MATH::
+
   \sum_{n\geq 0}
   \sum_{p=0}^{2n}
   \sum_{q=0}^{2n}
-  \mathrm{h}^{p,q}((\mathop{\rm Hilb}\nolimits^nS,{L}_n)x^py^qt^n
+  \mathrm{h}^{p,q}(\mathop{\rm Hilb}\nolimits^nS,{L}_n)x^py^qt^n
   =
   \prod_{k\ge 1}
   \prod_{p=0}^2
@@ -18,7 +22,25 @@ It reads
   \left(
     1-(-1)^{p+q}x^{p+k-1}y^{q+k-1}t^k
   \right)^{-(-1)^{p+q}\mathrm{h}^{p,q}(S,{L}^{\otimes k})}.
-```
+
+An interesting example where things can be computed also using an explicit description
+of the Hilbert scheme is $\\operatorname{Hilb}^2\\mathbb{P}^2$, where the Hochschild
+cohomology (or rather, Hochschild--Kostant--Rosenberg decomposition) is computed,
+which corresponds to the twisted Hodge diamond using the anticanonical line bundle,
+cf. [Section 4.2, 2309.06244]::
+
+    sage: from twisted_hilbert import *
+    sage: S = CompleteIntersectionSurface([], 3) # anticanonical twist
+    sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()
+      1
+      0   8
+      0   10   38
+      0   0    35   80
+      0   0    0    28   55
+          0    0    0    0
+               0    0    0
+                    0    0
+                         0
 
 * [2309.06244] Pieter Belmans, Lie Fu, Andreas Krug:
   Hochschild cohomology of Hilbert schemes of points on surfaces
@@ -124,8 +146,8 @@ class TwistedHodgeDiamond(Element):
                   8        0
                       10
 
-    Notice how (twisted) Hodge diamond are printed in a funny way, with `h^{0,0}` at
-    the bottom.
+    Notice how (twisted) Hodge diamond are printed in a funny way, with
+    $\\mathrm{h}^{0,0}$ at the bottom.
 
     """
 
@@ -175,7 +197,7 @@ class TwistedHodgeDiamond(Element):
             sage: from twisted_hilbert import *
             sage: EnriquesSurface()[0].dimension()
             2
-            sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), Integer(3)).dimension()
+            sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), 3).dimension()
             6
 
         """
@@ -222,7 +244,7 @@ class TwistedHodgeDiamond(Element):
 
         EXAMPLES:
 
-        Our favourite example is still `Hilb^2 P^2`:
+        Our favourite example is still $\\operatorname{Hilb}^2\\mathbb{P}^2$::
 
             sage: from twisted_hilbert import *
             sage: H = TwistedHilbertSchemeDiamond(CompleteIntersectionSurface([], 3), 2)
@@ -650,7 +672,7 @@ def TwistedHilbertSchemeDiamond(S: TwistedSurfaceDiamonds, n):
 
     EXAMPLES:
 
-    Anticanonically twisted Hodge diamond of Hilb^2 P^2::
+    Anticanonically twisted Hodge diamond of $\\operatorname{Hilb}^2\\mathbb{P}^2$::
 
         sage: from twisted_hilbert import *
         sage: S = CompleteIntersectionSurface([], 3)
@@ -668,7 +690,8 @@ def TwistedHilbertSchemeDiamond(S: TwistedSurfaceDiamonds, n):
                        80        0
                             55
 
-    Anticanonically twisted Hodge diamond of Hilb^2 S where S is bielliptic order 2::
+    Anticanonically twisted Hodge diamond of $\\operatorname{Hilb}^2S$ where $S$ is a
+    bielliptic surface with canonical bundle of order 2::
 
         sage: TwistedHilbertSchemeDiamond(BiellipticSurface(2), 2).pprint()
                           0
@@ -681,7 +704,8 @@ def TwistedHilbertSchemeDiamond(S: TwistedSurfaceDiamonds, n):
                       0       0
                           0
 
-    Anticanonically twisted Hodge diamond of Hilb^2 S where S is bielliptic order 3::
+    Anticanonically twisted Hodge diamond of $\\operatorname{Hilb}^2S$ where $S$ is a
+    bielliptic surface with canonical bundle of order 3::
 
         sage: TwistedHilbertSchemeDiamond(BiellipticSurface(3), 2).pprint()
                           0
