@@ -23,6 +23,17 @@ It reads
     1-(-1)^{p+q}x^{p+k-1}y^{q+k-1}t^k
   \right)^{-(-1)^{p+q}\mathrm{h}^{p,q}(S,{L}^{\otimes k})}.
 
+Here, $L$ is a line bundle on a smooth projective surface $S$ (or a compact complex
+surface), $\\operatorname{Hilb}^nS$ is the Hilbert scheme of $n$ points on $S$,
+and $L_n$ is the induced line bundle on the Hilbert scheme. One is referred to [Fu]
+for more details.
+
+This formula computes the twisted Hodge numbers of $L_n$ on the Hilbert scheme, i.e.,
+
+.. MATH::
+
+  \mathrm{h}^{p,q}(\mathop{\rm Hilb}\nolimits^nS,L_n)
+
 An interesting example where things can be computed also using an explicit description
 of the Hilbert scheme is $\\operatorname{Hilb}^2\\mathbb{P}^2$, where the Hochschild
 cohomology (or rather, Hochschild--Kostant--Rosenberg decomposition) is computed,
@@ -42,9 +53,9 @@ cf. [Section 4.2, 2309.06244]::
                     0    0
                          0
 
-* [2309.06244] Pieter Belmans, Lie Fu, Andreas Krug:
+* [2309.06244] Pieter Belmans, Lie Fu, Andreas Krug,
   Hochschild cohomology of Hilbert schemes of points on surfaces
-  [arXiv:2309.06244](https://arxiv.org/abs/2309.06244)
+  `arXiv:2309.06244 <https://arxiv.org/abs/2309.06244>`_
 * [Fu] Lie Fu:
   Twisted Hodge numbers and deformation theory of Hilbert schemes of points on surfaces
   via Hodge modules
@@ -76,9 +87,9 @@ def twisted_hodge_diamond(S, n):
     the entries of the twisted Hodge diamond for a given number of points,
     i.e., the matrix describing
 
-    ```math
+    .. MATH::
+
       \mathrm{h}^{p,q}(\mathop{\rm Hilb}\nolimits^nS,L_n)
-    ```
 
     INPUT:
 
@@ -153,9 +164,14 @@ class TwistedHodgeDiamond(Element):
 
     def __init__(self, parent, M):
         """
+        Constructor for a TwistedHodgeDiamond (not to be called directly)
+
         INPUT:
 
         - ``M`` -- matrix encoding twisted Hodge diamond
+
+        This function should not be called directly, use the class method
+        :meth:`TwistedHodgeDiamond.from_matrix` instead.
         """
         self.__M = M
 
@@ -283,7 +299,6 @@ class TwistedHodgeDiamond(Element):
 
         * :meth:`TwistedHodgeDiamond.__str__` via `print`
         * :meth:`TwistedHodgeDiamond.pprint`
-        * :meth:`TwistedHodgeDiamond.polynomial`
 
         It is also possible to override this output by using the built-in
         functionality for parents and renaming.
@@ -355,7 +370,8 @@ class TwistedHodgeDiamond(Element):
 
             \dim\mathrm{H}^q(X,\Omega_X^p\otimes L)
 
-        corresponding to the entry indexed by `p` and `q` in the matrix.
+        corresponding to the entry indexed by $p$ and $q$ in the matrix, where we
+        take `key=(p,q)`.
 
         INPUT:
 
@@ -410,7 +426,7 @@ class TwistedSurfaceDiamonds:
     @classmethod
     def from_list(cls, diamonds):
         r"""
-        Construct a TwistedSurfaceDiamonds object from a list of matrices
+        Construct a :class:`TwistedSurfaceDiamonds` object from a list of matrices
 
         This is the basic approach, and limits the calculation of twisted Hodge
         numbers to however many entries are provided.
@@ -443,7 +459,9 @@ class TwistedSurfaceDiamonds:
 
 class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
     r"""
-    TwistedSurfaceDiamonds for a complete intersection and (power of) $\\mathcal{O}(1)$
+    :class:`TwistedSurfaceDiamonds` for a complete intersection
+
+    It is possible to vary the line bundle being used to any power of $\\mathcal{O}(1)$
     """
 
     __d = None
@@ -457,7 +475,7 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
         using [twisted-hodge-ci].
 
         * [twisted-hodge-ci] Twisted Hodge numbers for complete intersections
-        https://github.com/pbelmans/twisted-hodge-ci
+          `twisted-hodge-ci <https://github.com/pbelmans/twisted-hodge-ci>`_
 
         INPUT:
 
@@ -519,7 +537,9 @@ class CompleteIntersectionSurface(TwistedSurfaceDiamonds):
 
 class ProductSurface(TwistedSurfaceDiamonds):
     r"""
-    TwistedSurfaceDiamonds for the product of two curves and the anticanonical bundle
+    :class:`TwistedSurfaceDiamonds` for the product of two curves
+
+    The line bundle is the anticanonical bundle.
     """
 
     def __init__(self, g, h):
@@ -632,7 +652,9 @@ class ProductSurface(TwistedSurfaceDiamonds):
 
 class BiellipticSurface(TwistedSurfaceDiamonds):
     r"""
-    TwistedSurfaceDiamonds for a bielliptic surface and the anticanonical line bundle
+    :class:`TwistedSurfaceDiamonds` for a bielliptic surface
+
+    The line bundle is the anticanonical line bundle
     """
 
     def __init__(self, order):
@@ -660,11 +682,13 @@ class BiellipticSurface(TwistedSurfaceDiamonds):
 
 class EnriquesSurface(TwistedSurfaceDiamonds):
     r"""
-    TwistedSurfaceDiamonds for an Enriques surface and the (anti)canonical line bundle
+    :class:`TwistedSurfaceDiamonds` for an Enriques surface
+
+    The line bundle is the (anti)canonical line bundle
 
     EXAMPLES:
 
-    The following is Appendix B of [AJM.2017.v21.n6.a4]
+    The following is Appendix B of [AJM.2017.v21.n6.a4]::
 
         sage: from twisted_hilbert import *
         sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), 2)[3, 1]
@@ -680,10 +704,10 @@ class EnriquesSurface(TwistedSurfaceDiamonds):
                        0        0
                            0
 
-    * [AJM.2017.v21.n6.a4] Taro Hayashi
+    * [AJM.2017.v21.n6.a4] Taro Hayashi,
       Universal covering Calabi–Yau manifolds of the Hilbert schemes of points of
       Enriques surfaces
-      https://dx.doi.org/10.4310/AJM.2017.v21.n6.a4
+      `AJM.2017.v21.n6.a4 <https://dx.doi.org/10.4310/AJM.2017.v21.n6.a4>`_
     """
 
     def __getitem__(self, k):

@@ -37,3 +37,13 @@ Surfaces
     :members:
     :special-members:
     :member-order: bysource
+
+.. autoclass:: twisted_hilbert.EnriquesSurface
+    :members:
+    :special-members:
+    :member-order: bysource
+
+.. autoclass:: twisted_hilbert.ProductSurface
+    :members:
+    :special-members:
+    :member-order: bysource
