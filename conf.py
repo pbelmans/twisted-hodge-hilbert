@@ -26,8 +26,8 @@ sys.path.insert(0, os.path.abspath("."))
 
 # -- Project information -----------------------------------------------------
 
-project = "Hodge diamond cutter"
-copyright = "2021, Pieter Belmans"
+project = "Twisted Hodge numbers for Hilbert schemes of points"
+copyright = "2024, Pieter Belmans"
 author = "Pieter Belmans"
 # The full version, including alpha/beta/rc tags
 release = "v1.0"
