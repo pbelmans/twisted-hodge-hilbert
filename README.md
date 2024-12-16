@@ -9,7 +9,7 @@ We implement the twisted Hodge number formula for Hilbert schemes of points on s
 as
 
 * stated in Conjecture E of [2309.06244],
-* proven in [Fu].
+* proven in Theorem 1.1 of [2412.09975]
 
 It reads
 
@@ -21,7 +21,7 @@ It reads
 
 Here, $L$ is a line bundle on a smooth projective surface $S$ (or a compact complex
 surface), $\mathop{\rm Hilb}^nS$ is the Hilbert scheme of $n$ points on $S$,
-and $L_n$ is the induced line bundle on the Hilbert scheme. One is referred to [Fu]
+and $L_n$ is the induced line bundle on the Hilbert scheme. One is referred to [2412.09975]
 for more details.
 
 This formula computes the twisted Hodge numbers of $L_n$ on the Hilbert scheme, i.e.,
@@ -53,7 +53,8 @@ sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()
 
 * [2309.06244] Pieter Belmans, Lie Fu, Andreas Krug: Hochschild cohomology of Hilbert schemes of points on surfaces
   [arXiv:2309.06244](https://arxiv.org/abs/2309.06244)
-* [Fu] Lie Fu: Twisted Hodge numbers and deformation theory of Hilbert schemes of points on surfaces via Hodge modules
+* [2412.09975] Lie Fu: Twisted Hodge numbers and deformation theory of Hilbert schemes of points on surfaces via Hodge modules
+  [arXiv:2412.09975](https://arxiv.org/abs/2412.09975)
 
 
 ## Getting started
