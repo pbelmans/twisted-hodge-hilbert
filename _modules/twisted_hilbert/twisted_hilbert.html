@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>twisted_hilbert.twisted_hilbert &#8212; Twisted Hodge numbers for Hilbert schemes of points v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=e160b93e"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+<script defer data-domain="twisted-hilbert.ncag.info" src="https://plausible.io/js/script.js"></script>
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for twisted_hilbert.twisted_hilbert</h1><div class="highlight"><pre>
+<span></span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Compute twisted Hodge numbers for Hilbert schemes of points</span>
+
+<span class="sd">We implement the twisted Hodge number formula for Hilbert schemes of points on surfaces,</span>
+<span class="sd">as</span>
+
+<span class="sd">* stated in Conjecture E of [2309.06244],</span>
+<span class="sd">* proven in Theorem 1.1 of [2412.09975]</span>
+
+<span class="sd">It reads</span>
+
+<span class="sd">.. MATH::</span>
+
+<span class="sd">  \sum_{n\geq 0}</span>
+<span class="sd">  \sum_{p=0}^{2n}</span>
+<span class="sd">  \sum_{q=0}^{2n}</span>
+<span class="sd">  \mathrm{h}^{p,q}(\mathop{\rm Hilb}\nolimits^nS,{L}_n)x^py^qt^n</span>
+<span class="sd">  =</span>
+<span class="sd">  \prod_{k\ge 1}</span>
+<span class="sd">  \prod_{p=0}^2</span>
+<span class="sd">  \prod_{q=0}^2</span>
+<span class="sd">  \left(</span>
+<span class="sd">    1-(-1)^{p+q}x^{p+k-1}y^{q+k-1}t^k</span>
+<span class="sd">  \right)^{-(-1)^{p+q}\mathrm{h}^{p,q}(S,{L}^{\otimes k})}.</span>
+
+<span class="sd">Here, $L$ is a line bundle on a smooth projective surface $S$ (or a compact complex</span>
+<span class="sd">surface), $\\operatorname{Hilb}^nS$ is the Hilbert scheme of $n$ points on $S$,</span>
+<span class="sd">and $L_n$ is the induced line bundle on the Hilbert scheme. One is referred to</span>
+<span class="sd">[2412.09975] for more details.</span>
+
+<span class="sd">This formula computes the twisted Hodge numbers of $L_n$ on the Hilbert scheme, i.e.,</span>
+
+<span class="sd">.. MATH::</span>
+
+<span class="sd">  \mathrm{h}^{p,q}(\mathop{\rm Hilb}\nolimits^nS,L_n)</span>
+
+<span class="sd">An interesting example where things can be computed also using an explicit description</span>
+<span class="sd">of the Hilbert scheme is $\\operatorname{Hilb}^2\\mathbb{P}^2$, where the Hochschild</span>
+<span class="sd">cohomology (or rather, Hochschild--Kostant--Rosenberg decomposition) is computed,</span>
+<span class="sd">which corresponds to the twisted Hodge diamond using the anticanonical line bundle,</span>
+<span class="sd">cf. [Section 4.2, 2309.06244]::</span>
+
+<span class="sd">    sage: from twisted_hilbert import *</span>
+<span class="sd">    sage: S = CompleteIntersectionSurface([], 3) # anticanonical twist</span>
+<span class="sd">    sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()</span>
+<span class="sd">      1</span>
+<span class="sd">      0   8</span>
+<span class="sd">      0   10   38</span>
+<span class="sd">      0   0    35   80</span>
+<span class="sd">      0   0    0    28   55</span>
+<span class="sd">          0    0    0    0</span>
+<span class="sd">               0    0    0</span>
+<span class="sd">                    0    0</span>
+<span class="sd">                         0</span>
+
+<span class="sd">* [2309.06244] Pieter Belmans, Lie Fu, Andreas Krug,</span>
+<span class="sd">  Hochschild cohomology of Hilbert schemes of points on surfaces</span>
+<span class="sd">  `arXiv:2309.06244 &lt;https://arxiv.org/abs/2309.06244&gt;`_</span>
+<span class="sd">* [2412.09975] Lie Fu: Twisted Hodge numbers and deformation theory of Hilbert schemes</span>
+<span class="sd">  of points on surfaces via Hodge modules</span>
+<span class="sd">  [arXiv:2412.09975](https://arxiv.org/abs/2412.09975)</span>
+
+<span class="sd">AUTHORS:</span>
+
+<span class="sd">- Pieter Belmans (2024-12-12): initial version</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">twisted_ci</span>
+<span class="kn">from</span> <span class="nn">sage.arith.misc</span> <span class="kn">import</span> <span class="n">binomial</span>
+<span class="kn">from</span> <span class="nn">sage.categories.cartesian_product</span> <span class="kn">import</span> <span class="n">cartesian_product</span>
+<span class="kn">from</span> <span class="nn">sage.categories.rings</span> <span class="kn">import</span> <span class="n">Rings</span>
+<span class="kn">from</span> <span class="nn">sage.matrix.constructor</span> <span class="kn">import</span> <span class="n">matrix</span>
+<span class="kn">from</span> <span class="nn">sage.misc.fast_methods</span> <span class="kn">import</span> <span class="n">Singleton</span>
+<span class="kn">from</span> <span class="nn">sage.misc.table</span> <span class="kn">import</span> <span class="n">table</span>
+<span class="kn">from</span> <span class="nn">sage.rings.integer_ring</span> <span class="kn">import</span> <span class="n">ZZ</span>
+<span class="kn">from</span> <span class="nn">sage.rings.polynomial.multi_polynomial</span> <span class="kn">import</span> <span class="n">MPolynomial</span>
+<span class="kn">from</span> <span class="nn">sage.rings.power_series_ring</span> <span class="kn">import</span> <span class="n">PowerSeriesRing</span>
+<span class="kn">from</span> <span class="nn">sage.structure.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="kn">from</span> <span class="nn">sage.structure.parent</span> <span class="kn">import</span> <span class="n">Parent</span>
+
+
+<span class="k">def</span> <span class="nf">twisted_hodge_diamond</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the twisted Hodge diamond of a Hilbert scheme of points</span>
+
+<span class="sd">    This implements the twisted Hodge number formula described above, to compute</span>
+<span class="sd">    the entries of the twisted Hodge diamond for a given number of points,</span>
+<span class="sd">    i.e., the matrix describing</span>
+
+<span class="sd">    .. MATH::</span>
+
+<span class="sd">      \mathrm{h}^{p,q}(\mathop{\rm Hilb}\nolimits^nS,L_n)</span>
+
+<span class="sd">    INPUT:</span>
+
+<span class="sd">    - ``S`` -- sequence of twisted Hodge diamonds of the surface</span>
+
+<span class="sd">    - ``n`` -- the number of points on the Hilbert scheme</span>
+
+<span class="sd">    EXAMPLES::</span>
+
+<span class="sd">        sage: from twisted_hilbert import *</span>
+<span class="sd">        sage: P2 = [None, None, None]</span>
+<span class="sd">        sage: P2[0] = matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])</span>
+<span class="sd">        sage: P2[1] = matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])</span>
+<span class="sd">        sage: P2[2] = matrix([[28, 0, 0], [35, 0, 0], [10, 0, 0]])</span>
+<span class="sd">        sage: twisted_hodge_diamond(P2, 2)</span>
+<span class="sd">        [55  0  0  0  0]</span>
+<span class="sd">        [80 28  0  0  0]</span>
+<span class="sd">        [38 35  0  0  0]</span>
+<span class="sd">        [ 8 10  0  0  0]</span>
+<span class="sd">        [ 1  0  0  0  0]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;need enough entries in list&quot;</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">PowerSeriesRing</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span> <span class="n">default_prec</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">PowerSeriesRing</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="n">default_prec</span><span class="o">=</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">gens</span><span class="p">()</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">gen</span><span class="p">()</span>
+
+    <span class="n">H</span> <span class="o">=</span> <span class="n">B</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">cartesian_product</span><span class="p">([</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]):</span>
+            <span class="n">H</span> <span class="o">*=</span> <span class="p">(</span>
+                <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span> <span class="o">**</span> <span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">y</span> <span class="o">**</span> <span class="p">(</span><span class="n">q</span> <span class="o">+</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">t</span><span class="o">**</span><span class="n">k</span>
+            <span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">p</span> <span class="o">+</span> <span class="n">q</span><span class="p">))</span> <span class="o">*</span> <span class="n">S</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">])</span>
+
+    <span class="n">M</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">zero</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">cartesian_product</span><span class="p">([</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">M</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">dict</span><span class="p">()[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">dict</span><span class="p">()[</span><span class="n">A</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">p</span> <span class="o">*</span> <span class="n">y</span><span class="o">**</span><span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">exponents</span><span class="p">()[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">M</span>
+
+
+<div class="viewcode-block" id="TwistedHodgeDiamond">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHodgeDiamond">[docs]</a>
+<span class="k">class</span> <span class="nc">TwistedHodgeDiamond</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Container structure for twisted Hodge diamonds.</span>
+
+<span class="sd">    EXAMPLES:</span>
+
+<span class="sd">    The twisted Hodge diamond for the projective plane and anticanonical bundle::</span>
+
+<span class="sd">        sage: from twisted_hilbert import *</span>
+<span class="sd">        sage: H = TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])</span>
+<span class="sd">        sage: H</span>
+<span class="sd">        twisted Hodge diamond</span>
+<span class="sd">        sage: H.pprint()</span>
+<span class="sd">                      0</span>
+<span class="sd">                  0        0</span>
+<span class="sd">              1       0        0</span>
+<span class="sd">                  8        0</span>
+<span class="sd">                      10</span>
+
+<span class="sd">    Notice how (twisted) Hodge diamond are printed in a funny way, with</span>
+<span class="sd">    $\\mathrm{h}^{0,0}$ at the bottom.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TwistedHodgeDiamond.__init__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHodgeDiamond.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for a TwistedHodgeDiamond (not to be called directly)</span>
+
+<span class="sd">        INPUT:</span>
+
+<span class="sd">        - ``M`` -- matrix encoding twisted Hodge diamond</span>
+
+<span class="sd">        This function should not be called directly, use the class method</span>
+<span class="sd">        :meth:`TwistedHodgeDiamond.from_matrix` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__M</span> <span class="o">=</span> <span class="n">M</span>
+
+        <span class="n">Element</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TwistedHodgeDiamond.from_matrix">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHodgeDiamond.from_matrix">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_matrix</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct a twisted Hodge diamond from a matrix</span>
+
+<span class="sd">        INPUT:</span>
+
+<span class="sd">        - ``M`` -- square matrix encoding twisted Hodge diamond</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        The twisted Hodge diamond for the projective plane and anticanonical bundle::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: H = TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])</span>
+<span class="sd">            sage: H.pprint()</span>
+<span class="sd">                          0</span>
+<span class="sd">                      0        0</span>
+<span class="sd">                  1       0        0</span>
+<span class="sd">                      8        0</span>
+<span class="sd">                          10</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">M</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">M</span><span class="o">.</span><span class="n">is_square</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">TwistedHodgeDiamondRing</span><span class="p">()(</span><span class="n">M</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TwistedHodgeDiamond.dimension">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHodgeDiamond.dimension">[docs]</a>
+    <span class="k">def</span> <span class="nf">dimension</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Dimension of the variety underlying the twisted Hodge diamond</span>
+
+<span class="sd">        EXAMPLES::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: EnriquesSurface()[0].dimension()</span>
+<span class="sd">            2</span>
+<span class="sd">            sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), 3).dimension()</span>
+<span class="sd">            6</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__M</span><span class="o">.</span><span class="n">nrows</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="TwistedHodgeDiamond.pprint">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHodgeDiamond.pprint">[docs]</a>
+    <span class="k">def</span> <span class="nf">pprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Pretty print the twisted Hodge diamond</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        The twisted Hodge diamond for the projective plane and anticanonical bundle::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: H = TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])</span>
+<span class="sd">            sage: H.pprint()</span>
+<span class="sd">                          0</span>
+<span class="sd">                      0        0</span>
+<span class="sd">                  1       0        0</span>
+<span class="sd">                      8        0</span>
+<span class="sd">                          10</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">d</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span> <span class="o">-</span> <span class="n">d</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">row</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">__M</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="n">j</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="s2">&quot;&quot;</span><span class="p">])</span>
+
+            <span class="n">T</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+        <span class="c1"># padding all rows to full length</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">)):</span>
+            <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">d</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">table</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TwistedHodgeDiamond.as_parallelogram">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHodgeDiamond.as_parallelogram">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_parallelogram</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return the twisted Hodge diamond as polyvector parallelogram</span>
+
+<span class="sd">        It is up to the user to make sure that the twisted Hodge diamond is computed</span>
+<span class="sd">        using the anticanonical bundle.</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        Our favourite example is still $\\operatorname{Hilb}^2\\mathbb{P}^2$::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: H = TwistedHilbertSchemeDiamond(CompleteIntersectionSurface([], 3), 2)</span>
+<span class="sd">            sage: H.as_parallelogram()</span>
+<span class="sd">              1</span>
+<span class="sd">              0   8</span>
+<span class="sd">              0   10   38</span>
+<span class="sd">              0   0    35   80</span>
+<span class="sd">              0   0    0    28   55</span>
+<span class="sd">                  0    0    0    0</span>
+<span class="sd">                       0    0    0</span>
+<span class="sd">                            0    0</span>
+<span class="sd">                                 0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">T</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="n">p</span>
+                <span class="k">if</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">d</span> <span class="o">-</span> <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">table</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Output diagnostic information</span>
+
+<span class="sd">        This is a one-line string giving some basic information about the twisted Hodge</span>
+<span class="sd">        diamond. You&#39;ll see this when you just evaluate something which returns</span>
+<span class="sd">        a twisted Hodge diamond. To see something more useful, you&#39;ll likely want to use</span>
+
+<span class="sd">        * :meth:`TwistedHodgeDiamond.__str__` via `print`</span>
+<span class="sd">        * :meth:`TwistedHodgeDiamond.pprint`</span>
+
+<span class="sd">        It is also possible to override this output by using the built-in</span>
+<span class="sd">        functionality for parents and renaming.</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        The default behavior::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])</span>
+<span class="sd">            twisted Hodge diamond</span>
+
+<span class="sd">        Special constructors give additional information::</span>
+
+<span class="sd">            sage: CompleteIntersectionSurface(3, 2)[2]</span>
+<span class="sd">            twisted Hodge diamond for complete intersection of degree [3] and L=O(4)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;twisted Hodge diamond&quot;</span>
+
+<div class="viewcode-block" id="TwistedHodgeDiamond.__str__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHodgeDiamond.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Pretty print a twisted Hodge diamond</span>
+
+<span class="sd">        This gets called when you specifically print the object.</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        The twisted Hodge diamond for the projective plane and anticanonical bundle::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: H = TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])</span>
+<span class="sd">            sage: print(H)</span>
+<span class="sd">                          0</span>
+<span class="sd">                      0        0</span>
+<span class="sd">                  1       0        0</span>
+<span class="sd">                      8        0</span>
+<span class="sd">                          10</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pprint</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="TwistedHodgeDiamond.__eq__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHodgeDiamond.__eq__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compare two twisted Hodge diamonds</span>
+
+<span class="sd">        INPUT:</span>
+
+<span class="sd">        - ``other`` -- the other twisted Hodge diamond</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        Twisted Hodge diamonds for bielliptic surfaces are (not) the same::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: BiellipticSurface(2)[0] == BiellipticSurface(3)[0]</span>
+<span class="sd">            True</span>
+<span class="sd">            sage: BiellipticSurface(2)[1] == BiellipticSurface(3)[1]</span>
+<span class="sd">            False</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__M</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">__M</span></div>
+
+
+<div class="viewcode-block" id="TwistedHodgeDiamond.__getitem__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHodgeDiamond.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return $\\mathrm{h}^{p,q}(X,L)$</span>
+
+<span class="sd">        This is</span>
+
+<span class="sd">        .. MATH::</span>
+
+<span class="sd">            \dim\mathrm{H}^q(X,\Omega_X^p\otimes L)</span>
+
+<span class="sd">        corresponding to the entry indexed by $p$ and $q$ in the matrix, where we</span>
+<span class="sd">        take `key=(p,q)`.</span>
+
+<span class="sd">        INPUT:</span>
+
+<span class="sd">        - ``key``: tuple of indices for the twisted Hodge diamond</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        The twisted Hodge diamond for the projective plane and anticanonical bundle::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: H = TwistedHodgeDiamond.from_matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])</span>
+<span class="sd">            sage: H[0, 0]</span>
+<span class="sd">            10</span>
+<span class="sd">            sage: H[1, 0]</span>
+<span class="sd">            8</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__M</span><span class="p">[</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span></div>
+</div>
+
+
+
+<span class="k">class</span> <span class="nc">TwistedHodgeDiamondRing</span><span class="p">(</span><span class="n">Singleton</span><span class="p">,</span> <span class="n">Parent</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Parent</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">Rings</span><span class="p">()</span><span class="o">.</span><span class="n">Commutative</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_element_constructor_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ZZ</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="n">m</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">MPolynomial</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">elt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">elt</span>
+
+    <span class="k">def</span> <span class="nf">from_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix</span><span class="p">(</span><span class="n">M</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_repr_</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Ring of twisted Hodge diamonds&quot;</span>
+
+    <span class="n">Element</span> <span class="o">=</span> <span class="n">TwistedHodgeDiamond</span>
+
+
+<div class="viewcode-block" id="TwistedSurfaceDiamonds">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedSurfaceDiamonds">[docs]</a>
+<span class="k">class</span> <span class="nc">TwistedSurfaceDiamonds</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Encodes twisted Hodge diamonds of surface and powers of a line bundle</span>
+
+<span class="sd">    This makes it possible to implement both a class that knows all about a surface</span>
+<span class="sd">    and one that only contains a finite amount of data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TwistedSurfaceDiamonds.from_list">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedSurfaceDiamonds.from_list">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_list</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">diamonds</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct a :class:`TwistedSurfaceDiamonds` object from a list of matrices</span>
+
+<span class="sd">        This is the basic approach, and limits the calculation of twisted Hodge</span>
+<span class="sd">        numbers to however many entries are provided.</span>
+
+<span class="sd">        INPUT:</span>
+
+<span class="sd">        - ``diamonds`` -- list of 3x3 matrices with twisted Hodge numbers</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        Twisted Hodge numbers of the projective plane::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: P2 = [None, None, None]</span>
+<span class="sd">            sage: P2[0] = matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])</span>
+<span class="sd">            sage: P2[1] = matrix([[10, 0, 0], [8, 0, 0], [1, 0, 0]])</span>
+<span class="sd">            sage: P2[2] = matrix([[28, 0, 0], [35, 0, 0], [10, 0, 0]])</span>
+<span class="sd">            sage: S = TwistedSurfaceDiamonds.from_list(P2)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pair</span> <span class="o">=</span> <span class="n">TwistedSurfaceDiamonds</span><span class="p">()</span>
+        <span class="n">pair</span><span class="o">.</span><span class="n">__diamonds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">,</span> <span class="n">diamonds</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">pair</span></div>
+
+
+<div class="viewcode-block" id="TwistedSurfaceDiamonds.__getitem__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedSurfaceDiamonds.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the twisted Hodge diamond for the line bundle ``L^k``&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__L</span><span class="p">[</span><span class="n">k</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CompleteIntersectionSurface">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.CompleteIntersectionSurface">[docs]</a>
+<span class="k">class</span> <span class="nc">CompleteIntersectionSurface</span><span class="p">(</span><span class="n">TwistedSurfaceDiamonds</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :class:`TwistedSurfaceDiamonds` for a complete intersection</span>
+
+<span class="sd">    It is possible to vary the line bundle being used to any power of $\\mathcal{O}(1)$</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__d</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">__i</span> <span class="o">=</span> <span class="mi">1</span>
+
+<div class="viewcode-block" id="CompleteIntersectionSurface.__init__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.CompleteIntersectionSurface.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct a complete intersection</span>
+
+<span class="sd">        The twisted Hodge numbers for complete intersection surfaces are computed</span>
+<span class="sd">        using [twisted-hodge-ci].</span>
+
+<span class="sd">        * [twisted-hodge-ci] Twisted Hodge numbers for complete intersections</span>
+<span class="sd">          `twisted-hodge-ci &lt;https://github.com/pbelmans/twisted-hodge-ci&gt;`_</span>
+
+<span class="sd">        INPUT:</span>
+
+<span class="sd">        - ``d`` -- degree, or list of degrees</span>
+
+<span class="sd">        - ``i`` (default: 1) -- power of $\\mathcal{O}(1)$ to be used</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        Anticanonically twisted projective plane::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: CompleteIntersectionSurface([], 3)[1].pprint()</span>
+<span class="sd">                      0</span>
+<span class="sd">                  0        0</span>
+<span class="sd">              1       0        0</span>
+<span class="sd">                  8        0</span>
+<span class="sd">                      10</span>
+
+<span class="sd">        Quadric surface with default twist::</span>
+
+<span class="sd">            sage: CompleteIntersectionSurface(2)[1].pprint()</span>
+<span class="sd">                      0</span>
+<span class="sd">                  0       0</span>
+<span class="sd">              0       0       0</span>
+<span class="sd">                  0       0</span>
+<span class="sd">                      4</span>
+
+<span class="sd">        del Pezzo surface of degree 4 with default (and anticanonical) twist::</span>
+
+<span class="sd">            sage: CompleteIntersectionSurface([2, 2])[1].pprint()</span>
+<span class="sd">                      0</span>
+<span class="sd">                  0       0</span>
+<span class="sd">              1       2       0</span>
+<span class="sd">                  0       0</span>
+<span class="sd">                      5</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__d</span> <span class="o">=</span> <span class="n">d</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__i</span> <span class="o">=</span> <span class="n">i</span></div>
+
+
+<div class="viewcode-block" id="CompleteIntersectionSurface.__getitem__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.CompleteIntersectionSurface.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="c1"># TODO make this cleaner...</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">twisted_ci</span><span class="o">.</span><span class="n">TwistedHodgeDiamond</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__d</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__d</span><span class="p">),</span> <span class="n">k</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">__i</span><span class="p">)</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">_TwistedHodgeDiamond__M</span><span class="p">)</span>
+        <span class="n">H</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+            <span class="s2">&quot;twisted Hodge diamond for complete intersection of &quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;degree </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__d</span><span class="si">}</span><span class="s2"> and L=O(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">k</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">H</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ProductSurface">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.ProductSurface">[docs]</a>
+<span class="k">class</span> <span class="nc">ProductSurface</span><span class="p">(</span><span class="n">TwistedSurfaceDiamonds</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :class:`TwistedSurfaceDiamonds` for the product of two curves</span>
+
+<span class="sd">    The line bundle is the anticanonical bundle.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ProductSurface.__init__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.ProductSurface.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">g</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">h</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;genera need to be positive&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__g</span> <span class="o">=</span> <span class="n">g</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__h</span> <span class="o">=</span> <span class="n">h</span></div>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__H</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Cohomology of $i$th power of anticanonical line bundle on genus $g$ curve</span>
+
+<span class="sd">        Helper function, not to be called directly.</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">            The projective line:</span>
+
+<span class="sd">                sage: from twisted_hilbert import *</span>
+<span class="sd">                sage: ProductSurface._ProductSurface__H(0, 0)</span>
+<span class="sd">                [1, 0]</span>
+<span class="sd">                sage: ProductSurface._ProductSurface__H(0, 3)</span>
+<span class="sd">                [7, 0]</span>
+<span class="sd">                sage: ProductSurface._ProductSurface__H(0, -3)</span>
+<span class="sd">                [0, 5]</span>
+
+<span class="sd">            On an elliptic curve:</span>
+
+<span class="sd">                sage: ProductSurface._ProductSurface__H(1, 0)</span>
+<span class="sd">                [1, 1]</span>
+<span class="sd">                sage: ProductSurface._ProductSurface__H(1, 5)</span>
+<span class="sd">                [1, 1]</span>
+
+<span class="sd">            On a curve of genus 3:</span>
+
+<span class="sd">                sage: from twisted_hilbert import *</span>
+<span class="sd">                sage: ProductSurface._ProductSurface__H(3, 0)</span>
+<span class="sd">                [1, 3]</span>
+<span class="sd">                sage: ProductSurface._ProductSurface__H(3, -1)</span>
+<span class="sd">                [3, 1]</span>
+<span class="sd">                sage: ProductSurface._ProductSurface__H(3, 3)</span>
+<span class="sd">                [0, 14]</span>
+<span class="sd">                sage: ProductSurface._ProductSurface__H(3, -3)</span>
+<span class="sd">                [10, 0]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">g</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">g</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">g</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">g</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">g</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">g</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">g</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+
+<div class="viewcode-block" id="ProductSurface.__getitem__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.ProductSurface.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the twisted Hodge diamond for the kth power of the anticanonical bundle</span>
+
+<span class="sd">        - ``k`` -- power of the anticanonical bundle</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        The quadric is the product of two curves of genus 0::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: S = ProductSurface(0, 0)</span>
+<span class="sd">            sage: T = CompleteIntersectionSurface(2, 2)</span>
+<span class="sd">            sage: T[0] == S[0]</span>
+<span class="sd">            True</span>
+<span class="sd">            sage: T[3] == S[3]</span>
+<span class="sd">            True</span>
+<span class="sd">            sage: T[-5] == S[-5]</span>
+<span class="sd">            True</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># introduce shorthands</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__g</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__h</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">ProductSurface</span><span class="o">.</span><span class="n">__H</span>
+
+        <span class="k">return</span> <span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">[</span>
+                    <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">],</span>
+                <span class="p">[</span>
+                    <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="o">+</span> <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="o">+</span> <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="o">+</span> <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">],</span>
+                <span class="p">[</span>
+                    <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">H</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">],</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BiellipticSurface">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.BiellipticSurface">[docs]</a>
+<span class="k">class</span> <span class="nc">BiellipticSurface</span><span class="p">(</span><span class="n">TwistedSurfaceDiamonds</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :class:`TwistedSurfaceDiamonds` for a bielliptic surface</span>
+
+<span class="sd">    The line bundle is the anticanonical line bundle</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BiellipticSurface.__init__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.BiellipticSurface.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">order</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__order</span> <span class="o">=</span> <span class="n">order</span></div>
+
+
+<div class="viewcode-block" id="BiellipticSurface.__getitem__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.BiellipticSurface.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the twisted Hodge diamond for the kth power of the anticanonical bundle</span>
+
+<span class="sd">        INPUT:</span>
+
+<span class="sd">        - ``k`` -- power of the anticanonical bundle</span>
+
+<span class="sd">        The calculations are based on the basic results of Section 4.3 of [2309.06244],</span>
+<span class="sd">        and provide an independent verification of the conclusions.</span>
+
+<span class="sd">        EXAMPLES:</span>
+
+<span class="sd">        The bigraded version of Lemma 4.7::</span>
+
+<span class="sd">            sage: from twisted_hilbert import *</span>
+<span class="sd">            sage: BiellipticSurface(2)[1].as_parallelogram()</span>
+<span class="sd">              1</span>
+<span class="sd">              1   1</span>
+<span class="sd">              0   2   0</span>
+<span class="sd">                  1   1</span>
+<span class="sd">                      1</span>
+<span class="sd">            sage: BiellipticSurface(3)[1].as_parallelogram()</span>
+<span class="sd">              1</span>
+<span class="sd">              1   1</span>
+<span class="sd">              0   1   0</span>
+<span class="sd">                  0   0</span>
+<span class="sd">                      0</span>
+<span class="sd">            sage: BiellipticSurface(4)[1].as_parallelogram()</span>
+<span class="sd">              1</span>
+<span class="sd">              1   1</span>
+<span class="sd">              0   1   0</span>
+<span class="sd">                  0   0</span>
+<span class="sd">                      0</span>
+<span class="sd">            sage: BiellipticSurface(6)[1].as_parallelogram()</span>
+<span class="sd">              1</span>
+<span class="sd">              1   1</span>
+<span class="sd">              0   1   0</span>
+<span class="sd">                  0   0</span>
+<span class="sd">                      0</span>
+
+<span class="sd">        The bigraded version of Proposition 4.9::</span>
+
+<span class="sd">            sage: S = BiellipticSurface(2)</span>
+<span class="sd">            sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()</span>
+<span class="sd">              1</span>
+<span class="sd">              1   1</span>
+<span class="sd">              0   3   0</span>
+<span class="sd">              0   4   4   0</span>
+<span class="sd">              0   2   8   2   0</span>
+<span class="sd">                  0   4   4   0</span>
+<span class="sd">                      0   3   0</span>
+<span class="sd">                          1   1</span>
+<span class="sd">                              1</span>
+<span class="sd">            sage: S = BiellipticSurface(3)</span>
+<span class="sd">            sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()</span>
+<span class="sd">              1</span>
+<span class="sd">              1   1</span>
+<span class="sd">              0   2   0</span>
+<span class="sd">              0   1   1   0</span>
+<span class="sd">              0   0   2   0   0</span>
+<span class="sd">                  0   1   1   0</span>
+<span class="sd">                      0   1   0</span>
+<span class="sd">                          0   0</span>
+<span class="sd">                              0</span>
+<span class="sd">            sage: S = BiellipticSurface(4)</span>
+<span class="sd">            sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()</span>
+<span class="sd">              1</span>
+<span class="sd">              1   1</span>
+<span class="sd">              0   2   0</span>
+<span class="sd">              0   1   1   0</span>
+<span class="sd">              0   0   1   0   0</span>
+<span class="sd">                  0   0   0   0</span>
+<span class="sd">                      0   0   0</span>
+<span class="sd">                          0   0</span>
+<span class="sd">                              0</span>
+<span class="sd">            sage: S = BiellipticSurface(6)</span>
+<span class="sd">            sage: TwistedHilbertSchemeDiamond(S, 2).as_parallelogram()</span>
+<span class="sd">              1</span>
+<span class="sd">              1   1</span>
+<span class="sd">              0   2   0</span>
+<span class="sd">              0   1   1   0</span>
+<span class="sd">              0   0   1   0   0</span>
+<span class="sd">                  0   0   0   0</span>
+<span class="sd">                      0   0   0</span>
+<span class="sd">                          0   0</span>
+<span class="sd">                              0</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__order</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">diamonds</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span><span class="n">diamonds</span><span class="p">[</span><span class="n">k</span> <span class="o">%</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__order</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">diamonds</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span><span class="n">diamonds</span><span class="p">[</span><span class="n">k</span> <span class="o">%</span> <span class="mi">3</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__order</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">diamonds</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span><span class="n">diamonds</span><span class="p">[</span><span class="n">k</span> <span class="o">%</span> <span class="mi">4</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__order</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="n">diamonds</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+                <span class="n">matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span><span class="n">diamonds</span><span class="p">[</span><span class="n">k</span> <span class="o">%</span> <span class="mi">6</span><span class="p">])</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="EnriquesSurface">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.EnriquesSurface">[docs]</a>
+<span class="k">class</span> <span class="nc">EnriquesSurface</span><span class="p">(</span><span class="n">TwistedSurfaceDiamonds</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :class:`TwistedSurfaceDiamonds` for an Enriques surface</span>
+
+<span class="sd">    The line bundle is the (anti)canonical line bundle</span>
+
+<span class="sd">    EXAMPLES:</span>
+
+<span class="sd">    The following is Appendix B of [AJM.2017.v21.n6.a4]::</span>
+
+<span class="sd">        sage: from twisted_hilbert import *</span>
+<span class="sd">        sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), 2)[3, 1]</span>
+<span class="sd">        10</span>
+<span class="sd">        sage: TwistedHilbertSchemeDiamond(EnriquesSurface(), 2).pprint()</span>
+<span class="sd">                           0</span>
+<span class="sd">                       0        0</span>
+<span class="sd">                  0        1        0</span>
+<span class="sd">              0        0        0        0</span>
+<span class="sd">          1       10       66       10       1</span>
+<span class="sd">              0        0        0        0</span>
+<span class="sd">                  0        1        0</span>
+<span class="sd">                       0        0</span>
+<span class="sd">                           0</span>
+
+<span class="sd">    * [AJM.2017.v21.n6.a4] Taro Hayashi,</span>
+<span class="sd">      Universal covering Calabi–Yau manifolds of the Hilbert schemes of points of</span>
+<span class="sd">      Enriques surfaces</span>
+<span class="sd">      `AJM.2017.v21.n6.a4 &lt;https://dx.doi.org/10.4310/AJM.2017.v21.n6.a4&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="EnriquesSurface.__getitem__">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.EnriquesSurface.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="HilbertSchemeDeformations">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.HilbertSchemeDeformations">[docs]</a>
+<span class="k">def</span> <span class="nf">HilbertSchemeDeformations</span><span class="p">(</span><span class="n">HKR</span><span class="p">:</span> <span class="n">TwistedHodgeDiamond</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The degree 0, 1 and 2 cohomology of the tangent bundle of a Hilbert scheme</span>
+
+<span class="sd">    This implements Theorem 1.5 of [2412.09975]. It it expected that the user inputs the</span>
+<span class="sd">    anticanonical Hodge diamond, describing the Hochschild cohomology of the surface.</span>
+
+<span class="sd">    For this one doesn&#39;t have to be able to compute all the twisted Hodge diamonds</span>
+<span class="sd">    required to describe the twisted Hodge diamond giving all of the Hochschild</span>
+<span class="sd">    cohomology of the Hilbert scheme, a single twisted Hodge diamond, for the</span>
+<span class="sd">    anticanonical twist, suffices.</span>
+
+<span class="sd">    EXAMPLES:</span>
+
+<span class="sd">    Our favourite example is still $\\operatorname{Hilb}^2\\mathbb{P}^2$::</span>
+
+<span class="sd">        sage: from twisted_hilbert import *</span>
+<span class="sd">        sage: HilbertSchemeDeformations(CompleteIntersectionSurface([], 3)[1])</span>
+<span class="sd">        [8, 10, 0]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">HKR</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="n">HKR</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="n">HKR</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="o">+</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="o">+</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="o">+</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">binomial</span><span class="p">(</span><span class="n">HKR</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="o">+</span> <span class="n">HKR</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="TwistedHilbertSchemeDiamond">
+<a class="viewcode-back" href="../../index.html#twisted_hilbert.TwistedHilbertSchemeDiamond">[docs]</a>
+<span class="k">def</span> <span class="nf">TwistedHilbertSchemeDiamond</span><span class="p">(</span><span class="n">S</span><span class="p">:</span> <span class="n">TwistedSurfaceDiamonds</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct twisted Hodge diamond Hilbert schemes of $n$ points on $S$</span>
+
+<span class="sd">    INPUT:</span>
+
+<span class="sd">    - ``S`` -- twisted Hodge diamonds for powers of a line bundle</span>
+
+<span class="sd">    - ``n`` -- number of points</span>
+
+<span class="sd">    EXAMPLES:</span>
+
+<span class="sd">    Anticanonically twisted Hodge diamond of $\\operatorname{Hilb}^2\\mathbb{P}^2$::</span>
+
+<span class="sd">        sage: from twisted_hilbert import *</span>
+<span class="sd">        sage: S = CompleteIntersectionSurface([], 3)</span>
+<span class="sd">        sage: H = TwistedHilbertSchemeDiamond(S, 2)</span>
+<span class="sd">        sage: H</span>
+<span class="sd">        twisted Hodge diamond for Hilb^2 S</span>
+<span class="sd">        sage: H.pprint()</span>
+<span class="sd">                            0</span>
+<span class="sd">                       0         0</span>
+<span class="sd">                  0         0        0</span>
+<span class="sd">              0        0         0       0</span>
+<span class="sd">          1       10        0        0       0</span>
+<span class="sd">              8        35        0       0</span>
+<span class="sd">                  38        28       0</span>
+<span class="sd">                       80        0</span>
+<span class="sd">                            55</span>
+
+<span class="sd">    Anticanonically twisted Hodge diamond of $\\operatorname{Hilb}^2S$ where $S$ is a</span>
+<span class="sd">    bielliptic surface with canonical bundle of order 2::</span>
+
+<span class="sd">        sage: TwistedHilbertSchemeDiamond(BiellipticSurface(2), 2).pprint()</span>
+<span class="sd">                          0</span>
+<span class="sd">                      0       0</span>
+<span class="sd">                  0       2       0</span>
+<span class="sd">              1       4       4       1</span>
+<span class="sd">          1       3       8       3       1</span>
+<span class="sd">              1       4       4       1</span>
+<span class="sd">                  0       2       0</span>
+<span class="sd">                      0       0</span>
+<span class="sd">                          0</span>
+
+<span class="sd">    Anticanonically twisted Hodge diamond of $\\operatorname{Hilb}^2S$ where $S$ is a</span>
+<span class="sd">    bielliptic surface with canonical bundle of order 3::</span>
+
+<span class="sd">        sage: TwistedHilbertSchemeDiamond(BiellipticSurface(3), 2).pprint()</span>
+<span class="sd">                          0</span>
+<span class="sd">                      0       0</span>
+<span class="sd">                  0       0       0</span>
+<span class="sd">              1       1       1       0</span>
+<span class="sd">          1       2       2       1       0</span>
+<span class="sd">              1       1       1       0</span>
+<span class="sd">                  0       0       0</span>
+<span class="sd">                      0       0</span>
+<span class="sd">                          0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">TwistedHodgeDiamond</span><span class="o">.</span><span class="n">from_matrix</span><span class="p">(</span>
+        <span class="n">twisted_hodge_diamond</span><span class="p">([</span><span class="n">S</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">n</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">H</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;twisted Hodge diamond for Hilb^</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> S&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">H</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Twisted Hodge numbers for Hilbert schemes of points</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Pieter Belmans.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
