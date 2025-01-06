@@ -83,7 +83,7 @@ You can choose to cite a specific version, or always the latest version.
 The following BibTeX entry is a good starting point:
 
 ```bibtex
-@software{hodge-diamond-cutter,
+@software{twisted-hodge-diamond-hilbert,
   author = {Belmans, Pieter},
   title = {Twisted Hodge numbers for Hilbert schemes of points},
   url = {https://github.com/pbelmans/twisted-hodge-hilbert},
